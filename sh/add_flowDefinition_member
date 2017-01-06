@@ -1,0 +1,12 @@
+#!/bin/bash
+echo Adding Flow Definitions to manifest ...
+if grep -q '<name>FlowDefinition<\/name>' ${sf_sourcedir}/package.xml
+then
+    echo No Flow Definitons found ...
+    exit 1
+fi
+
+CONTENT="    <types>\n        <members>*<\/members>\n        <name>FlowDefinition<\/name>\n    <\/types>"
+
+(awk -v content="$CONTENT" '/<\/version>/{print content}1' ${sf_sourcedir}/package.xml) > ${sf_sourcedir}/tmp
+mv ${sf_sourcedir}/tmp ${sf_sourcedir}/package.xml

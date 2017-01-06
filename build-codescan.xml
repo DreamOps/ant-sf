@@ -1,0 +1,40 @@
+<project name="sfCodeScan">
+
+    <!-- CODESCAN TARGETS: Analyze static code for quality and stylistic issues. -->
+
+    <!-- Define the Sonar task -->
+    <taskdef uri="antlib:org.sonar.ant" 
+        resource="org/sonar/ant/antlib.xml"
+        classpath="${tooldir}/lib/codescan-ant-task.jar"/>   
+
+    <target name="AnalyzePullRequest" xmlns:sf="salesforce" depends="initHome" 
+      description="Applies static analysis rules to an existing pull request for a task branch. Requires: home, sf_credentials, system.sonar.bitbucket.repoSlug, sonar.bitbucket.branchName, sonar.bitbucket.minSeverity. Local: sonar.accountName, sonar.apiKey, sonar.login, sonar.password. The pull request for the branch must already exist. A local checkout is not needed.">
+
+      <!-- Define the Sonar properties -->
+      <property name="sonar.projectVersion" value="0.0.1" />
+      <property name="sonar.projectDate" value="1980-01-01" />
+      <property name="sonar.projectKey" value="dummyProjectKey" />
+      <property name="sonar.projectName" value="dummyProjectName" />
+      <property name="sonar.sources" value="${sourcedir}" />
+      <property name="sonar.sourceEncoding" value="UTF-8" />
+      <property name="sonar.host.url" value="${sonar_host_url}" />
+      <property name="sonar.login" value="${sonar_login}" />
+      <property name="sonar.password" value="${sonar_password}" />
+      <property name="sonar.analysis.mode" value="issues" />
+      <!-- Define the Mimbex Bitbucket properties -->
+      <property name="sonar_minSeverity"
+                value="${sonar_minSeverity}" />
+      <property name="sonar.bitbucket.branchName"
+                value="${sonar_branchName}" />
+      <property name="sonar.bitbucket.accountName" value="${sonar_accountName}" />
+      <property name="sonar.bitbucket.teamName" value="${sonar_teamName}" />
+      <property name="sonar.bitbucket.repoSlug"
+                value="${sonar.bitbucket.repoSlug}" />
+      <property name="sonar.bitbucket.apiKey"
+                value="${sonar.apiKey}" />
+
+      <!-- Execute Sonar -->
+      <sonar:sonar xmlns:sonar="antlib:org.sonar.ant" />
+    </target>
+
+</project>

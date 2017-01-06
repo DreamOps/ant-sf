@@ -1,0 +1,54 @@
+#!/bin/bash
+# Retrieves or creates a task branch.
+# https://confluence.atlassian.com/bamkb/how-to-commit-to-a-git-repo-during-a-build-720641378.html
+# function error_exit { echo "$1" 1>&2; exit 1 }
+echo Preparing commit ...
+echo repo_url: ${repo_url}
+echo remote: ${remote}
+echo repo_config_email: ${repo_config_email}
+echo repo_config_user: ${repo_config_user}
+echo task: ${task}
+echo repo_message: ${repo_message}
+echo branch: ${branch}
+echo commitdir: ${commitdir}
+
+# Add remote to commit changes
+# git remote add ${remote} ${repo_url} || error_exit "Remote failed."
+# set the origin remote
+cd ${homedir}
+gitremote=`git remote -v`
+
+echo gitremote: $gitremote
+
+if [[ -z $gitremote  ]]; then
+    git remote add ${remote} ${repo_url}
+	echo added remote
+fi
+if [[ $gitremote == *nothing* ]]; then
+    git remote set-url ${remote} ${repo_url}
+	echo set remote url
+fi
+git config user.email ${repo_config_email}
+git config user.name ${repo_config_user}
+
+# add, commit and push changes
+filelist=`git status -s`
+if [[ -z $filelist ]]; then
+    echo "Warning: Nothing to commit."
+    exit 0
+fi
+git add ${commitdir}
+
+git commit -a -m "${task} ${repo_message}"
+
+echo git branch
+git branch
+
+returnval=`git push ${remote} ${branch}`
+
+echo returnval: $returnval
+ 
+if [[ -n $returnval ]]; then
+   echo "Error: Commit failed."
+   exit 1
+fi

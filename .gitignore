@@ -1,0 +1,9 @@
+*.bak
+*.pyc
+.idea
+vcs.xml
+# in a forked repo, you may wish to checkin these items instead
+# please do not include a modified .gitignore in a pull request
+build_repo.properties
+build_local.properties
+build-local.xml

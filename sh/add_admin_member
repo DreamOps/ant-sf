@@ -1,0 +1,18 @@
+#!/bin/bash
+echo Adding Admin profile to the manifest ...
+if grep -q '<name>Profile<\/name>' ${sf_sourcedir}/package.xml
+then
+    if grep -q '<members>Admin<\/members>' ${sf_sourcedir}/package.xml
+    then
+        echo Nothing to inject, skipping.
+        exit 1
+    else
+        CONTENT="        <members>Admin</members>"
+        (awk -v content="$CONTENT" '/<name>Profile<\/name>/{print content}1' ${sf_sourcedir}/package.xml) > ${sf_sourcedir}/tmp
+    fi
+else
+    CONTENT="    <types>\n        <members>Admin<\/members>\n        <name>Profile<\/name>\n    <\/types>"
+    (awk -v content="$CONTENT" '/<\/version>/{print content}1' ${sf_sourcedir}/package.xml) > ${sf_sourcedir}/tmp
+fi
+
+mv ${sf_sourcedir}/tmp ${sf_sourcedir}/package.xml

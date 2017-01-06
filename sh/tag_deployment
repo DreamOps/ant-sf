@@ -1,0 +1,6 @@
+#!/bin/bash
+echo Setting previousDeployment tag for next deployment
+git tag -d ${previousDeployment}
+git push ${remote} :refs/tags/${previousDeployment}
+git tag ${previousDeployment}
+git push ${remote} --tags

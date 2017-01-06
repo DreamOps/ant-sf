@@ -1,0 +1,5 @@
+#!/bin/bash
+# Inserts fullName field into a package manifest
+CONTENT="    <fullName>${sf_fullName}<\/fullName>"
+(awk -v content="$CONTENT" '/<Package.*>/{print;print content;next}1' ${sf_sourcedir}/package.xml) > ${sf_sourcedir}/tmp
+mv ${sf_sourcedir}/tmp ${sf_sourcedir}/package.xml

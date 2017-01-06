@@ -1,0 +1,384 @@
+<project name="sfScript">
+
+    <!-- SCRIPT TARGETS: Executes a script as a one step of a larger process. -->
+
+    <target name="info" depends="initHome" description="Shows the value of each 
+      property used by the buildfile. Requires: All parameters are optional. 
+      From the command line, info is useful for testing the affect of passing a 
+      given parameter on other properties. Some targets set their own properties 
+      before calling initHome or initRepo. Either run info as its own job 
+      (context), or AFTER the desired target runs.">
+      <echo level="info">Executing info script ...</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/info"/>
+        <!-- sf -->
+        <env key="sf_allowMissingFiles" value="${sf_allowMissingFiles}"/>
+        <env key="sf_apiVersion" value="${sf_apiVersion}"/>
+        <env key="sf_autoUpdatePackage" value="${sf_autoUpdatePackage}"/>
+        <env key="sf_checkOnly" value="${sf_checkOnly}"/>
+        <env key="sf_credentials" value="${sf_credentials}"/>
+        <env key="sf_deployRoot" value="${sf_deployRoot}"/>
+        <env key="sf_failOnError" value="${sf_failOnError}"/>
+        <env key="sf_fullName" value="${sf_fullName}"/>
+        <env key="sf_host" value="${sf_host}"/>
+        <env key="sf_ignoreWarnings" value="${sf_ignoreWarnings}"/>
+        <env key="sf_logType" value="${sf_logType}"/>
+        <env key="sf_maxPoll" value="${sf_maxPoll}"/>
+        <env key="sf_package_xml" value="${sf_package_xml}"/>
+        <env key="sf_packageNames" value="${sf_packageNames}"/>
+        <env key="sf_password" value="${sf_password}"/>
+        <env key="sf_password_org" value="${sf_password_org}"/>
+        <env key="sf_pollWaitMillis" value="${sf_pollWaitMillis}"/>
+        <env key="sf_prefix" value="${sf_prefix}"/>
+        <env key="sf_prefix_list" value="${sf_prefix_list}"/>
+        <env key="sf_purgeOnDelete" value="${sf_purgeOnDelete}"/>
+        <env key="sf_rollbackOnError" value="${sf_rollbackOnError}"/>
+        <env key="sf_retrieveTarget" value="${sf_retrieveTarget}"/>
+        <env key="sf_securityToken" value="${sf_securityToken}"/>
+        <env key="sf_serverurl" value="${sf_serverurl}"/>
+        <env key="sf_serverurl_login" value="${sf_serverurl_login}"/>
+        <env key="sf_serverurl_test" value="${sf_serverurl_test}"/>
+        <env key="sf_sessionId" value="${sf_sessionId}"/>
+        <env key="sf_singlePackage" value="${sf_singlePackage}"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+        <env key="sf_testLevel" value="${sf_testLevel}"/>
+        <env key="sf_trace" value="${sf_trace}"/>
+        <env key="sf_unpackaged" value="${sf_unpackaged}"/>
+        <env key="sf_unpackaged_xml" value="${sf_unpackaged_xml}"/>
+        <env key="sf_unzip" value="${sf_unzip}"/>
+        <env key="sf_username" value="${sf_username}"/>
+        <env key="sf_username_org" value="${sf_username_org}"/>
+        <env key="sf_zipfile" value="${sf_zipfile}"/>
+        <env key="sandbox" value="${sandbox}"/>
+        <!-- repo -->
+        <env key="repo_config_email" value="${repo_config_email}"/>
+        <env key="repo_config_user" value="${repo_config_user}"/>
+        <env key="repo_full_name" value="${repo_full_name}"/>
+        <env key="repo_host" value="${repo_host}"/>
+        <env key="repo_message" value="${repo_message}"/>
+        <env key="repo_name" value="${repo_name}"/>
+        <env key="repo_owner" value="${repo_owner}"/>
+        <env key="repo_password" value="${repo_password}"/>
+        <env key="repo_path" value="${repo_path}"/>
+        <env key="repo_post_pull_request_payload_bitbucket"
+             value="${repo_post_pull_request_payload_bitbucket}"/>
+        <env key="repo_post_pull_request_payload_github"
+             value="${repo_post_pull_request_payload_github}"/>
+        <env key="post_pull_request_script"
+             value="${post_pull_request_script}"/>
+        <env key="repo_url" value="${repo_url}"/>
+        <env key="repo_user" value="${repo_user}"/>
+        <env key="branch" value="${branch}"/>
+        <env key="close_source_branch" value="${close_source_branch}"/>
+        <env key="commitmask" value="${commitmask}"/>
+        <env key="commitdir" value="${commitdir}"/>
+        <env key="parentdir" value="${parentdir}"/>
+        <env key="remote" value="${remote}"/>
+        <env key="destination" value="${destination}"/>
+        <env key="destBranch" value="${destBranch}"/>
+        <env key="sourceBranch" value="${sourceBranch}"/>
+        <!-- CodeScan -->
+        <env key="sonar_accountName" value="${sonar_accountName}" />
+        <env key="sonar_accountName" value="${sonar_teamName}" />
+        <env key="sonar_apiKey" value="${sonar_apiKey}" />
+        <env key="sonar_host_url" value="${sonar_host_url}" />
+        <env key="sonar_login" value="${sonar_login}" />
+        <env key="sonar_password" value="${sonar_password}" />
+        <env key="sonar_minSeverity" value="${sonar_minSeverity}" />
+        <env key="sonar_branchName" value="${sonar_branchName}"/>
+        <!-- runtime -->
+        <env key="basedir" value="${basedir}"/>
+        <env key="home" value ="${home}"/>
+        <env key="homedir" value="${homedir}"/>
+        <env key="tool" value="${tool}"/>
+        <env key="tooldir" value="${tooldir}"/>
+        <env key="task" value="${task}"/>
+      </exec>
+    </target>
+
+    <!--
+      Executes commit script to checkin metadata.
+    -->
+    <target name="commit" depends="initRepo">
+      <echo level="info">Executing commit using ...
+        "${tooldir}/sh/commit"
+        homedir="${homedir}"
+        repo_url="${repo_url}"
+        repo_config_email="${repo_config_email}"
+        repo_config_user="${repo_config_user}"
+        repo_message="${repo_message}"
+        basedir="${basedir}"
+        branch="${branch}"
+        commitdir="${commitdir}"
+        remote="${remote}"
+        task="${task}"</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/commit"/>
+        <env key="homedir" value="${homedir}"/>
+        <env key="repo_url" value="${repo_url}"/>
+        <env key="repo_config_email" value="${repo_config_email}"/>
+        <env key="repo_config_user" value="${repo_config_user}"/>
+        <env key="repo_message" value="${repo_message}"/>
+        <env key="basedir" value="${basedir}"/>
+        <env key="branch" value="${branch}"/>
+        <env key="commitdir" value="${commitdir}"/>
+        <env key="remote" value="${remote}"/>
+        <env key="task" value="${task}"/>
+      </exec>
+    </target>
+
+    <!--
+      Removes problematic metadata components.
+    -->
+    <target name="fixComponents" depends="initHome">
+      <echo>Removing problematic components using ...
+        sourcedir=${sf_sourcedir}</echo>
+      <delete file="${sf_sourcedir}/layouts/CaseInteraction-Case Feed Layout.layout"/>
+      <delete file="${sf_sourcedir}/objects/Idea.object"/>
+      <delete file="${sf_sourcedir}/settings/Ideas.settings"/>
+      <delete file="${sf_sourcedir}/settings/PersonalJourney.settings"/>
+      <delete file="${sf_sourcedir}/workflows/ExternalEventMapping.workflow"/>
+      <delete file="${sf_sourcedir}/workflows/Idea.workflow"/>
+      <delete file="${sf_sourcedir}/workflows/Reply.workflow"/>
+      <delete file="${sf_sourcedir}/workflows/Question.workflow"/>
+      <delete file="${sf_sourcedir}/workflows/SocialPersona.workflow"/>
+      <delete file="${sf_sourcedir}/workflows/SocialPost.workflow"/>
+    </target>
+
+    <!--
+      Removes UNMANAGED field from a retrieved manifest.
+    -->
+    <target name="fixManifest">
+      <echo level="info">Executing fixManifest using ...
+        "${tooldir}/sh/fix-manifest"
+        "homedir"="${homedir}"
+      </echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/del_unpackaged_label"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+      </exec>
+    </target>
+
+    <!--
+      Removes user permission settings from profiles and permission sets.
+    -->
+    <target name="fixProfiles">
+      <echo level="info">Executing fixProfiles using ...
+        "${tooldir}/sh/fix-profiles"
+        "homedir"="${homedir}"
+      </echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/del_profile_permset_members"/>
+        <env key="homedir" value="${homedir}"/>
+      </exec>
+    </target>
+
+    <!-- 
+      Adds Admin profile to the manifest.
+    -->
+    <target name="injectProfiles" depends="initHome">
+      <echo level="info">Executing injectProfiles script using ...
+        "${tooldir}/sh/inject-profiles"
+        sf_sourcedir="${sf_sourcedir}"</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/add_admin_member"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+      </exec>
+    </target>
+
+    <!--
+      Adds Flow Definitions to the manifest, when Flows are defines. 
+    -->
+    <target name="injectFlowDefinitions" depends="initHome">
+      <echo level="info">Executing injectFlowDefinitions script using ...
+        "${tooldir}/sh/inject-profiles"
+        sf_sourcedir="${sf_sourcedir}"</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/add_flowDefinition_member"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+      </exec>
+    </target>
+
+    <!--
+      Adds a fullName field to the manifest, so that metadata is contained within a named package.
+    -->
+    <target name="injectFullName">
+      <echo level="info">Executing injectFullName script using ...
+        "${tooldir}/inject-fullName"
+        "sf_sourcedir"="${sf_sourcedir}"
+        sf_fullName="${sf_fullName}"
+      </echo>
+      <exec executable="bash">
+        <arg value="${tooldir}/add_fullName_field"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+        <env key="sf_fullName" value="${sf_fullName}"/>
+      </exec>
+    </target>
+    
+    <!--
+      Updates the Account object fieldSet elements to include expected Account fields in either the displayedFields list or the availableFields list.
+    -->
+    <target name ="fieldsetsExtend">
+        <echo level="info">Extending Account fieldsetsExtend using ...
+          homedir=${homedir}
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/fieldsetsExtend.py"/>
+          <env key="homedir" value="${homedir}"/>
+        </exec>
+    </target>
+
+    <!--
+      Clones the repo under the basedir and creates the task branch.
+    -->
+    <target name="branch" depends="initRepo">
+      <echo level="info">Executing branch using ...
+        "${tooldir}/sh/branch"
+        repo_url="${repo_url}"
+        repo_name="${repo_name}"
+        branch="${branch}"
+        parentdir="${parentdir}"</echo>
+      <delete dir="${repo_name}"/>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/branch"/>
+        <env key="repo_url" value="${repo_url}"/>
+        <env key="repo_name" value="${repo_name}"/>
+        <env key="branch" value="${branch}"/>
+        <env key="parentdir" value="${parentdir}"/>
+      </exec>
+    </target>
+
+    <!--
+      Creates Bitbucket pull request via the REST API. 
+    -->
+    <target name="postPullRequest" depends="initRepo">
+      <echo level="info">Creating Pull Request using ...
+        "${tooldir}/sh/${post_pull_request_script}"
+        repo_full_name="${repo_full_name}"
+        repo_password="${repo_password}"
+        repo_user="${repo_user}"</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/${post_pull_request_script}"/>
+        <env key="repo_full_name" value="${repo_full_name}"/>
+        <env key="repo_password" value="${repo_password}"/>
+        <env key="repo_post_pull_request_payload_bitbucket"
+             value="${repo_post_pull_request_payload_bitbucket}"/>
+        <env key="repo_post_pull_request_payload_github"
+             value="${repo_post_pull_request_payload_github}"/>
+        <env key="repo_user" value="${repo_user}"/>
+      </exec>
+    </target>
+
+    <!--
+      Creates a standard .gitignore and package.xml manifest.
+    -->
+    <target name="setupConfig" depends="initHome">
+      <echo>Creating core files using ...
+        homedir="${homedir}"
+        tooldir="${tooldir}"
+        sf_sourcedir="${sf_sourcedir}"</echo>
+      <concat destfile="${homedir}/.gitignore" append="yes">
+        <filelist dir="${tooldir}" files="@gitignore"/>
+      </concat>
+      <mkdir dir="${sf_sourcedir}"/>
+      <copy file="${tooldir}/package.xml" tofile="${sf_sourcedir}/package.xml"/>
+    </target>
+
+    <!--
+      Inserts a prefix to specific items in specific files. Accepts input as an
+      array of JSON objects that specifies the prefix, search string, and path.
+    -->
+    <target name = "prefixInject" depends="initHome">
+        <echo>Injecting prefixes to specific locations using ...
+          homedir=${homedir}
+          inject_json=${sf_inject}
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/prefix_inject.py"/>
+          <env key="homedir" value="${homedir}"/>
+          <env key="inject_json" value="${sf_inject_nu}"/>
+        </exec>
+    </target>
+
+    <!--
+      Injects a given package prefix to selected custom metadata types.
+    -->
+    <target name="prefixMdt" depends="initHome">
+        <echo>Packaging metadata using ... (TBD) ...
+            sf_prefix="${sf_prefix}"
+            sf_sourcedir="${sf_sourcedir}"
+        </echo>
+        <!-- (TBD) KZN-257
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/prefix_mdt.py"/>
+          <env key="sf_prefix" value="${sf_prefix}"/>
+          <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+        </exec>
+        -->
+    </target>
+
+    <!--
+      Exchange prefix references in metadata files so that code can be deployed under a different namespace prefix. 
+    -->
+    <target name="prefixSwap" depends="initHome">
+        <echo>Swapping prefixes using ...
+            sf_sourcedir="${sf_sourcedir}"
+            sf_prefixSwap="${sf_prefix_swap}"
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/prefix_swap.py"/>
+          <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+          <env key="sf_prefixSwap" value="${sf_prefix_swap}"/>
+        </exec>
+    </target>
+
+    <!--
+      Compares a source and target profile and outputs a well-formed
+      target_upgrade.profile granting access to components available
+      in target that are not granted by source.
+    -->
+    <target name="profileDelta" depends="initHome">
+      <echo>Comparing source and target profiles using ...
+        profile_path_source="${profile_path_source}"
+        profile_path_target="${profile_path_target}"
+      </echo>
+      <exec executable="python" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/py/profile_delta.py"/>
+        <env key="profile_path_source=" value="${profile_path_source}"/>
+        <env key="profile_path_target" value="${profile_path_target}"/>
+
+        <env key="homedir" value="${homedir}"/>
+        <env key="sf_prefix_list" value="${sf_prefix_list}"/>
+      </exec>
+    </target>
+
+    <!--
+      Updates the version number on Apex classes to match the latest
+      version of the managed packages installed in the org.
+    -->
+    <target name="versionForward" depends="initHome,retrieveInstalledPackages">
+      <echo>Conforming versions in local code to latest installed versions of
+          managed packages using ...
+        homedir="${homedir}"
+        sf_prefix_list="${sf_prefix_list}"
+      </echo>
+      <exec executable="python" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/py/versionForward.py"/>
+        <env key="homedir" value="${homedir}"/>
+        <env key="sf_prefix_list" value="${sf_prefix_list}"/>
+      </exec>
+    </target>
+
+    <!--
+      Builds ZLabels class to ensure all Custom Labels are packaged.
+    -->
+    <target name="zlabelsBuild">
+        <echo>Building zLabels class using ...
+          homedir=${homedir}
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/zlabels_build.py"/>
+          <env key="homedir" value="${homedir}"/>
+        </exec>
+    </target>
+</project>

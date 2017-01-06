@@ -1,0 +1,36 @@
+<project name="sfMain" default="info" basedir=".."
+         xmlns:sf="antlib:com.salesforce">
+
+    <!-- Define the metadata (home) and Ant (tool) folders -->
+    <property name="home" value ="sf-org"/>
+
+    <property name="tool" value ="ant-dx"/>
+
+    <property name="homedir" value="${basedir}/${home}"/>
+
+    <property name="tooldir" value="${basedir}/${tool}"/>
+
+    <!-- Define the Salesforce task -->
+    <taskdef uri="antlib:com.salesforce"
+        resource="com/salesforce/antlib.xml"
+        classpath="${tooldir}/lib/ant-salesforce.jar"/>
+
+    <!-- See https://ant.apache.org/manual/Tasks/import.html -->
+
+    <!-- optional targets -->
+
+    <import file="${tooldir}/build-codescan.xml"/>
+
+    <import file="${tooldir}/build-deltaDeploy.xml"/>
+
+    <!-- standard targets -->
+
+    <import file="${tooldir}/build-init.xml"/>
+
+    <import file="${tooldir}/build-core.xml"/>
+
+    <import file="${tooldir}/build-script.xml"/>
+
+    <import file="${tooldir}/build-direct.xml"/>
+
+</project>

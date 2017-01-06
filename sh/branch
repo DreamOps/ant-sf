@@ -1,0 +1,19 @@
+#!/bin/bash
+echo Retrieving or creating feature branch for a task.
+function error_exit { 
+	echo "$1" 1>&2; exit 1
+}
+function create_branch { 
+    echo Creating ${branch}
+	git checkout -b ${branch} || error_exit "Branch failed." 
+    git push -u origin ${branch} || error_exit "Branch failed."
+}
+echo Changing to ${parentdir}
+cd ${parentdir}
+echo Removing any prior checkout of ${repo_name}
+rm -rfd ${repo_name}
+echo Cloning ${repo_name} repository from ${repo_url}
+git clone ${repo_url}.git ${repo_name} || error_exit "Clone failed."
+cd ${repo_name}
+echo Trying ${branch}
+git checkout ${branch} || create_branch

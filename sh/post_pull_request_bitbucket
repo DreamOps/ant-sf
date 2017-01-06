@@ -1,0 +1,4 @@
+#!/bin/bash
+# Creates pull request in Bitbucket repository using REST API.
+echo ${repo_post_pull_request_payload_bitbucket}
+curl -X POST -H "Content-Type: application/json" --user ${repo_user}:${repo_password} https://bitbucket.org/api/2.0/repositories/${repo_full_name}/pullrequests --data "${repo_post_pull_request_payload_bitbucket}"

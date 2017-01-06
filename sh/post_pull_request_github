@@ -1,0 +1,4 @@
+#!/bin/bash
+# Creates pull request in GitHub repository using REST API.
+echo ${repo_post_pull_request_payload_github}
+curl -X POST -H "Content-Type: application/json" --user ${repo_user}:${repo_password} https://api.github.com/repos/${repo_owner}/${repo_full_name}/pulls --data ${repo_post_pull_request_payload_github}

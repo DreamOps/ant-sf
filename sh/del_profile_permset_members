@@ -1,0 +1,7 @@
+#!/bin/bash
+echo Removing user permission settings from profiles and permission sets ...
+for filename in ${homedir}/src/{profiles,permissionsets}/*; do
+    echo Fixing "$filename"
+    sed -i.bak '/<userPermissions>/,/<\/userPermissions>/d' "$filename"
+    rm "$filename.bak"
+done

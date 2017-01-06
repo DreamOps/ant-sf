@@ -1,0 +1,5 @@
+#!/bin/bash 
+echo Removing UNMANAGED field from a retrieved manifest ...
+sed -i'' '/UNMANAGED/d' ${sf_sourcedir}/package.xml
+
+

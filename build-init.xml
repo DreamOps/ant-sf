@@ -1,0 +1,190 @@
+<project name="sfInit" >
+
+	<!-- SETUP TARGETS: Intializes shared properties via the initHome AND initRepo targets. -->
+
+    <!--
+
+      There are two targets that initialize properties, initRepo and initHome. 
+      Separating the repository properties simplifies testing, and also helps 
+      with understanding the context for each of the many properties. 
+
+    -->
+
+    <target name="initRepo" depends="initRepoCore,initRepoHost"/>
+
+    <target name="initRepoCore">
+
+      <!-- Fallback to properties file for any repo fields not aleady set. -->
+      <property file="${homedir}/build_repo.properties"/>
+      <property file="${tooldir}/build_repo.properties"/>
+
+      <!-- 
+
+      To use a task branch, set the task or sandbox property from the command
+      line:
+       -Dtask=ABC-1234 
+       -Dsandbox=staging
+      Otherwise, the production org and master branch are used 
+      
+      -->
+
+      <!-- 
+
+      When a task is set, and the sandbox is not set, the sandbox name becomes
+      the task ID, without the separating hyphen (ABC-123 to ABC123).
+
+      -->
+      <script language="javascript">
+        if (project.getProperty('task') !== undefined &amp;&amp; project.getProperty('task') != null) {
+          arr = project.getProperty('task').split('-');
+          if (arr.length==1) {
+             project.setProperty('sandbox', arr[0]);
+          } else {
+             project.setProperty('sandbox', arr[0].concat(arr[1]));  
+             project.setProperty('number', arr[1]);
+          }
+        }
+      </script>
+
+      <!-- Set branch to the task value if task is defined. -->
+      <condition property="branch" value="${task}">
+        <isset property="task"/>
+      </condition>
+
+      <!-- Set branch to the sandbox value if sandbox is defined. -->
+      <condition property="branch" value="${sandbox}">
+        <isset property="sandbox"/>
+      </condition>
+
+      <!-- Fallback for any repo fields not set. -->
+      <property name="branch" value="master"/>
+      <property name="task" value=""/>
+
+      <property name="parentdir" value="${basedir}"/>
+      <property name="commitmask" value="/src/*"/>
+      <property name="commitdir" value="${homedir}${commitmask}"/>
+      <property name="remote" value="origin"/>    
+      <property name="destination" value="develop"/>
+      <property name="close_source_branch" value="false"/>
+
+      <property file="${tooldir}/build_repo.properties"/>
+      <property name="repo_config_user" value="${repo_user}"/>
+      <property name="repo_config_email_domain" value="example.com"/>
+      <property name="repo_config_email" value="${repo_config_user}@${repo_config_email_domain}"/>
+      <property name="repo_description" value=""/>
+      <property name="repo_message" value="Committed by build agent"/>
+      <property name="repo_name" value="${home}"/>
+      <property name="repo_full_name" value="${repo_owner}/${repo_name}"/>
+      <property name="repo_host" value="bitbucket.org"/>
+      <property name="repo_path" value="${repo_host}/${repo_full_name}"/>
+      <property name="repo_url" value="https://${repo_user}:${repo_password}@${repo_path}"/>
+
+      <!-- Setup pull request for Bitbucket. -->
+      <property name="repo_post_pull_request_payload_bitbucket">{ "title": "${task}
+          ${repo_message}", "description": "${repo_description}", "source": { "branch": { "name": "${branch}" }, "repository": { "full_name": "${repo_full_name}" } }, "destination": { "branch": { "name": "${destination}" } }, "reviewers": [ { "username": "" } ], "close_source_branch": ${close_source_branch} }</property>
+
+      <!-- Setup pull request for GitHub. -->
+      <property name="repo_post_pull_request_payload_github">{ "title": "${task} ${repo_message}", "body": "${repo_description}", "head": "${branch}", "base": "${destination}" }</property>
+    </target>
+
+    <target name="initRepoHost" depends="initBitbucket,initGitHub"/>
+
+    <target name="initBitbucket" depends="isRepoHostBitbucket" if="is_repo_host_bitbucket" >
+      <echo>Setting pull request payload script to Bitbucket version ...</echo>
+      <property name="post_pull_request_script" value="post_pull_request_bitbucket"/>
+      <echo>post_pull_request_script is ${post_pull_request_script}</echo>
+    </target>
+
+    <target name="isRepoHostBitbucket">
+      <condition property="is_repo_host_bitbucket">
+        <equals arg1="${repo_host}" arg2="bitbucket.org" />
+      </condition>
+    </target>
+
+    <target name="initGitHub" depends="isRepoHostGitHub" if="is_repo_host_github" >
+      <echo>Setting pull request payload script to Bitbucket version ...</echo>
+      <property name="post_pull_request_script" value="post_pull_request_github"/>
+      <echo>post_pull_request_script is ${post_pull_request_script}</echo>
+    </target>
+
+    <target name="isRepoHostGitHub">
+      <condition property="is_repo_host_github">
+        <equals arg1="${repo_host}" arg2="github.com" />
+      </condition>
+    </target>
+
+    <!-- 
+
+      The initHome target initializes the properties needed to manage
+      Salesforce Orgs and associated sandboxes.
+
+      A default build_sf.properties is bundled with the build.xml, which can
+      be overridden from the CLI or build server.
+
+    -->
+    <target name="initHome" depends="initRepo">
+
+      <!-- Fallback to properties file for any sf fields not aleady set. -->
+      <property file="${tooldir}/build_local.properties"/>
+      <property file="${tooldir}/build_sf.properties"/>
+            
+      <!-- 
+        If sf_credentials are set, parse into sf_username_org, and sf_password. 
+        Expected credential format: "username@example.com:passwordsecurityToken"
+      -->
+      <script language="javascript">
+        if (project.getProperty('sf_credentials') !== undefined &amp;&amp; project.getProperty('sf_credentials') != null) {
+          arr = project.getProperty('sf_credentials').split(':');
+          if (arr.length==2) {
+             project.setProperty('sf_username_org', arr[0]);
+             project.setProperty('sf_password_org', arr[1]);
+          }
+        }
+      </script>
+
+      <!-- Alternative to specifying a sandbox property. -->
+      <condition property="sf_serverurl" value="https://${sf_host}.salesforce.com">
+        <isset property="sf_host"/>
+      </condition>
+
+      <!-- Adjust properties if sandbox is set, or fallback. -->
+      <property name="sf_serverurl_test" value="https://test.salesforce.com"/>
+
+      <condition property="sf_serverurl" value="${sf_serverurl_test}">
+        <isset property="sandbox"/>
+      </condition>
+   
+      <property name="sf_serverurl" value="https://login.salesforce.com"/>
+     
+      <condition property="sf_username" value="${sf_username_org}.${sandbox}">
+        <isset property="sandbox"/>
+      </condition>
+
+      <property name="sf_username" value="${sf_username_org}"/>
+
+      <condition property="sf_password"
+                 value="${sf_password_org}${sf_securityToken}">
+        <isset property="sf_securityToken"/>
+      </condition>
+
+      <property name="sf_password" value="${sf_password_org}"/>
+
+      <!-- Default to single-package deployment. -->
+      <property name="sf_packageNames" value="${sf_fullName}"/>
+
+      <property name="sf_xmlns"
+                value="http://soap.sforce.com/2006/04/metadata"/>
+
+      <!-- Minimal package.xml manifests that deploy Salesforce components from
+      a local folder. -->
+      <property name="sf_package_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${sf_xmlns}">
+  <fullName>${sf_fullName}</fullName>
+  <version>${sf_apiVersion}</version>
+</Package>]]></property>
+
+      <property name="sf_unpackaged_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${sf_xmlns}">
+  <version>${sf_apiVersion}</version>
+</Package>]]></property>
+
+    </target>
+</project>

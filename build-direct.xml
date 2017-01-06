@@ -1,0 +1,94 @@
+<project name="sfDirect">
+
+    <!-- DIRECT TARGETS: Execute top-level operations for use with a direct customer. -->
+
+    <target name="InitProduction"
+            description="Prepares a new, empty repository for a production org by retrieving and pruning metadata from 
+            the org. Include repo_user property for the commit log." depends="setupConfig,retrieveUnpackaged,fixComponents,commit">
+      <echo level="info">Production is setup.</echo>
+    </target>
+
+    <target name="InitProductionExtension"
+            description="Follows the InitProduction pipeline, and conforms metadata to reflect the latest versions of base packages. Requires home, sf_credentials. Optional: sf_prefix_list (to conform Apex metadata to the latest version of the specified packages)."
+            depends="checkOnlyUnpackagedServer,setupConfig,retrieveUnpackaged,fixComponents,versionForward,commit">
+      <echo level="info">Production is setup.</echo>
+    </target>
+
+    <target name="StartNewTask" depends="taskRequired,deployPackage"
+      description="Starts a new task with metadata deployed into a package. Requires: home, sf_credentials. Optional: Set sf_fullName to the unmanaged or managed name (not the prefix). Develop is used as the default.">
+      <echo level="info">Task org is ready to go.</echo>
+    </target>
+
+    <target name="ReadyToReview" 
+      description="Create a pull request from changes made to a task org, if the tests pass. Requires: home, sf_credentials. Includes support for Flow Definitions and changes to the Admin profile. When used with a build server, do not select a client repository. (We clone our own.) "
+      depends="taskRequired,checkOnlyServer,branch,retrievePackage,commit,postPullRequest">
+       <echo level="info">Task pull request is ready to review.</echo>
+    </target>
+
+    <target name="ReadyToReviewFixes" 
+      description="Create a pull request from changes made to a task org, if the tests pass. Requires: home, sf_credentials. Includes support for Flow Definitions and changes to the Admin profile. When used with a build server, do not select a client repository. (We clone our own.) "
+      depends="taskRequired,checkOnlyServer,branch,retrievePackage,fixManifest,injectProfiles,injectFlowDefinitions,retrieveUnpackaged,fixProfiles,commit,postPullRequest">
+       <echo level="info">Task pull request is ready to review.</echo>
+    </target>
+
+    <target name="RetrieveFromOrg"
+            description="Updates the repository with metadata pulled from a specified org. Requires: home, sf_credentials. The target branch must be checked out. The branch (-Dbranch=staging) may be specified to override master. Convenience targets are also provided with common parameters already set, such as RetrieveFromStaging."
+            depends="checkOnlyUnpackagedServer,retrieveUnpackaged,fixComponents,commit">
+      <echo level="info">${branch} is refreshed from ${sf_username} org.</echo>
+    </target>
+
+    <target name="RetrieveFromDevelop"
+      description="Calls RetrieveFromOrg for the develop sandbox branch. Requires: home, sf_credentials. ">
+      <property name="sandbox" value="Develop"/>
+      <antcall target="RetrieveFromOrg"/>
+    </target>
+
+    <target name="RetrieveFromStaging"
+      description="Calls RetrieveFromOrg for the staging sandbox branch. Requires: home, sf_credentials. ">
+      <property name="sandbox" value="staging"/>
+      <antcall target="RetrieveFromOrg"/>
+    </target>
+
+    <target name="RetrieveFromProduction"
+      description="Calls RetrieveFromOrg for default master branch (production). Requires: home, sf_credentials.">
+        <antcall target="RetrieveFromOrg"/>
+    </target>
+
+    <target name="BackupStaging"
+      description="Updates a standing backup-staging branch with the production metadata. Requires: home, sf_credentials.">    
+      <property name="sandbox" value="staging"/>
+      <property name="branch" value="backup-staging"/>
+      <antcall target="RetrieveFromOrg"/>
+    </target>
+
+    <target name="BackupProduction"
+      description="Updates a standing backup branch with the production metadata. Requires: home, sf_credentials.">
+      <property name="branch" value="backup"/>
+      <antcall target="RetrieveFromOrg"/>
+    </target>
+
+    <target name="DeployToDevelop" 
+      description="Calls deploy for develop. Requires: home, sf_credentials (for develop). Expects a develop sandbox.">
+      <property name="sandbox" value="develop"/>
+      <antcall target="deploy"/>
+    </target>
+
+    <target name="DeployToStaging" depends="BackupStaging"
+      description="Calls deploy for staging. Requires: home, sf_credentials (for staging). Expects a develop and staging branch, with staging checked out, and a staging sandbox.">
+      <property name="sandbox" value="staging"/>
+      <antcall target="deploy"/>
+    </target>
+
+    <target name="DeployToProduction" depends="BackupProduction"
+      description="Calls deploy for production. Requires: home, sf_credentials (for production). Expects a staging and master branch, with master checked out, and a staging sandbox.">
+      <property name="branch" value="master"/>
+      <antcall target="deploy"/>
+    </target>
+
+    <target name="CheckOnlyDevelopToProduction" 
+      description="Validates develop against production without updating master. Requires home, sf_credentials (production).">
+      <property name="branch" value="develop"/>
+      <antcall target="checkOnly"/>
+    </target>
+    
+</project>

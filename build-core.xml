@@ -1,0 +1,399 @@
+<project name="sfCore" xmlns:sf="antlib:com.salesforce">
+
+    <!-- CORE TARGETS: Invokes a single Ant task as a one step of a larger process. -->
+
+    <!--
+      Ensures that the task property is set
+      for targets that require it.
+    -->
+    <target name="taskRequired" depends="initHome">
+      <fail message="Must specify task.">
+        <condition>
+          <or>
+            <not>
+              <isset property="task"/>
+            </not>
+            <equals arg1="${task}" arg2=""/>
+          </or>
+        </condition>
+      </fail>
+    </target>
+
+    <!-- Warning: The echo file line cannot wrap within the tag or the XML file is corrupt. -->
+    <target name="echoPackageManifest" depends="initHome">
+      <echo level="info">Writing package manifest using ...
+          sf_apiVersion="${sf_apiVersion}"
+          sf_fullName="${sf_fullName}"
+          sf_sourcedir="${sf_sourcedir}"</echo>
+      <echo file="${sf_sourcedir}/package.xml"
+            append="false">${sf_package_xml}</echo>
+    </target>
+
+    <!-- Warning: The echo file line cannot wrap within the tag or the XML file is corrupt. -->
+    <target name="echoUnpackagedManifest" depends="initHome">
+      <echo level="info">Writing package manifest using ...
+          sf_xmlns="${sf_xmlns}"
+          sf_apiVersion="${sf_apiVersion}"
+          sf_sourcedir="${sf_sourcedir}"</echo>
+      <echo file="${sf_sourcedir}/package.xml"
+            append="false">${sf_unpackaged_xml}</echo>
+    </target>
+
+    <!--
+        Describe metadata to describeMetadata.xml. (Included for completeness.)
+    -->
+    <target name="describe" depends="initHome">
+      <echo level="info">Retrieving components from the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        resultFilePath="${homedir}/describeMetadata.xml"</echo>
+      <sf:describeMetadata
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        resultFilePath="${homedir}/describeMetadata.xml"
+      />
+    </target>
+
+    <!--
+        List metadata to listMetadata.xml. (Included for completeness.)
+    -->
+    <target name="list" depends="initHome">
+      <echo level="info">Retrieving components from the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        resultFilePath="${homedir}/listMetadata.xml"</echo>
+      <sf:listMetadata
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        metadataType="CustomObject"
+        folder="objects"
+        resultFilePath="${homedir}/listMetadata.xml"
+      />
+    </target>
+
+    <!--
+        Fetches metadata according to a package manifest in the "unpackaged" folder
+        into the specified "sf_sourcedir" folder.
+    -->
+    <target name="retrieveUnpackaged" depends="initHome">
+      <property name="sf_unpackaged" value="${sf_sourcedir}/package.xml"/>
+      <mkdir dir="${sf_retrieveTarget}"/>
+      <echo level="info">Retrieving components from the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unpackaged="${sf_unpackaged}"
+        unzip="${sf_unzip}"
+        sf_sourcedir="${sf_sourcedir}"
+      </echo>
+      <sf:retrieve
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unpackaged="${sf_unpackaged}"
+        unzip="${sf_unzip}"/>
+        <move file="${sf_retrieveTarget}" tofile="${sf_sourcedir}"/>
+    </target>
+
+    <!--
+        Fetches metadata according to a wildcard package manifest referencing all retrievable types.
+    -->
+    <target name="retrieveAllUnpackaged">
+      <copy file="${tooldir}/package.xml" todir="${sf_deployRoot}"/>
+      <antcall target="retrieveUnpackaged"/>
+    </target>
+
+    <target name="retrieve">
+      <antcall target="retrieveUnpackaged"/>
+    </target>
+
+    <!--
+        Fetches packaged metadata from an org, using a stub manifest citing the API version.
+    -->
+    <target name="retrievePackage" depends="initHome">
+      <mkdir dir="${sf_retrieveTarget}"/>
+      <echo level="info">Retrieving components from the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        packageNames="${sf_packageNames}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unzip="${sf_unzip}"
+        sf_sourcedir="${sf_sourcedir}"</echo>
+      <sf:retrieve
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        packageNames="${sf_packageNames}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unzip="${sf_unzip}"/>
+        <move file="${sf_retrieveTarget}" tofile="${sf_sourcedir}"/>
+    </target>
+
+    <!--
+	   Fetches package metadata using a session ID rather than username/password (usually a trial org).
+    -->
+    <target name="retrievePackageSessionId" depends="initHome">
+      <echo level="info">Deploying components to the org using ...
+        sessionId="${sf_sessionId}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        packageNames="${sf_packageNames}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unzip="${sf_unzip}"</echo>
+      <sf:retrieve
+        sessionId="${sf_sessionId}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${sf_retrieveTarget}"
+        packageNames="${sf_packageNames}"
+        apiVersion="${sf_apiVersion}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        singlePackage="${sf_singlePackage}"
+        trace="${sf_trace}"
+        unzip="${sf_unzip}"/>
+    </target>
+
+    <!-- Do not call initHome before calling this target. -->
+    <target name="retrievePackages">
+        <property name="sf_singlePackage" value="true" />
+        <antcall target="retrievePackage"/>
+    </target>
+
+    <!--
+	   Deploys metadata into a package named on the package manifest in the "deployRoot" folder.
+    -->
+    <target name="deployPackage" depends="initHome">
+        <property name="sf_allowMissingFiles" value="true"/>
+        <property name="sf_autoUpdatePackage" value="true"/>
+        <property name="sf_checkOnly" value="false" />
+        <property name="sf_deployRoot" value="${sf_sourcedir}"/>
+        <echo file="${sf_deployRoot}/package.xml" append="false">${sf_package_xml}</echo>
+      <echo level="info">Deploying components to the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        checkOnly="${sf_checkOnly}"
+        maxPoll="${sf_maxPoll}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"
+        trace="${sf_trace}"</echo>
+      <sf:deploy
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        checkOnly="${sf_checkOnly}"
+        maxPoll="${sf_maxPoll}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"
+        trace="${sf_trace}"/>
+    </target>
+
+    <target name="deployIntoPackage">
+        <antcall target="deployPackage"/>
+    </target>
+
+    <!--
+	   Deploys metadata into a package using a sessionId instead of username:password (usually a trial org).
+    -->
+    <target name="deployPackageSessionId" depends="initHome">
+        <property name="sf_allowMissingFiles" value="true"/>
+        <property name="sf_autoUpdatePackage" value="true"/>
+        <property name="sf_checkOnly" value="false" />
+        <property name="sf_deployRoot" value="${sf_sourcedir}"/>
+      <echo level="info">Deploying components to the org using ...
+        sessionId="${sf_sessionId}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        checkOnly="${sf_checkOnly}"
+        maxPoll="${sf_maxPoll}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"
+        trace="{sf_trace}"</echo>
+      <sf:deploy
+        sessionId="${sf_sessionId}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        checkOnly="${sf_checkOnly}"
+        maxPoll="${sf_maxPoll}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        packageNames="${sf_packageNames}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"
+        trace="{sf_trace}"/>
+    </target>
+
+    <target name="deployIntoPackageToken">
+        <antcall target="deployPackageSessionId"/>
+    </target>
+
+    <!--
+        Deploys metadata using autoUpdatePackage and the package manifest in the "deployRoot" folder.
+    -->
+    <target name="deployUnpackaged" depends="initHome">
+        <property name="sf_allowMissingFiles" value="true"/>
+        <property name="sf_autoUpdatePackage" value="true"/>
+        <property name="sf_checkOnly" value="false" />
+        <property name="sf_deployRoot" value="${sf_sourcedir}"/>
+      <echo level="info">Deploying components to the org using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        checkOnly="${sf_checkOnly}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"</echo>
+      <sf:deploy
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        pollWaitMillis="${sf_pollWaitMillis}"
+        maxPoll="${sf_maxPoll}"
+        checkOnly="${sf_checkOnly}"
+        deployRoot="${sf_deployRoot}"
+        singlePackage="${sf_singlePackage}"
+        allowMissingFiles="${sf_allowMissingFiles}"
+        autoUpdatePackage="${sf_autoUpdatePackage}"
+        ignoreWarnings="${sf_ignoreWarnings}"
+        logType="${sf_logType}"
+        purgeOnDelete="${sf_purgeOnDelete}"
+        rollbackOnError="${sf_rollbackOnError}"
+        testLevel="${sf_testLevel}"/>
+    </target>
+
+    <!-- for completeness -->
+    <target name="deployUnpackagedStrict">
+        <property name="sf_allowMissingFiles" value="false"/>
+        <property name="sf_autoUpdatePackage" value="false"/>
+        <antcall target="deployUnpackaged"/>
+    </target>
+
+    <target name="deploy">
+        <antcall target="deployUnpackaged"/>
+    </target>
+
+    <target name="checkOnlyPackage">
+        <property name="sf_checkOnly" value="true" />
+        <antcall target="deployPackage"/>
+    </target>
+
+    <target name="checkOnlyUpdate">
+        <antcall target="checkOnlyPackage"/>
+    </target>
+
+    <target name="checkOnlyPackageSessionId">
+        <property name="sf_checkOnly" value="true" />
+        <antcall target="deployPackageSessionId"/>
+    </target>
+
+    <target name="checkOnlyUnpackaged">
+        <property name="sf_checkOnly" value="true" />
+        <antcall target="deployUnpackaged"/>
+    </target>
+
+    <target name="checkOnly">
+        <antcall target="checkOnlyUnpackaged"/>
+    </target>
+
+    <!-- Runs existing tests in org (server) without deploying new code. -->
+    <target name="checkOnlyUnpackagedServer" depends="initHome">
+        <property name="sf_checkOnly" value="true" />
+        <property name="sf_checkOnlyRoot" value="${basedir}/.checkOnlyRoot"/>
+        <mkdir dir="${sf_checkOnlyRoot}"/>
+        <echo file="${sf_checkOnlyRoot}/package.xml">${sf_unpackaged_xml}</echo>
+        <property name="sf_deployRoot" value="${sf_checkOnlyRoot}"/>
+        <property name="sf_testLevel" value="RunLocalTests"/>
+        <antcall target="deployUnpackaged"/>
+    </target>
+
+    <target name="checkOnlyServer">
+        <antcall target="checkOnlyUnpackagedServer"/>
+    </target>
+
+    <!--
+      Retrieves metadata describing installed packages,
+      usually to update the version set in Apex classes (versionForward).
+    -->
+   <target name="retrieveInstalledPackages" depends="initHome">
+      <echo level="info">Retrieving installed package versions using ...
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        retrieveTarget="${homedir}/opt</echo>
+      <mkdir dir="${homedir}/opt"/>
+      <sf:bulkRetrieve
+        username="${sf_username}"
+        password="${sf_password}"
+        serverurl="${sf_serverurl}"
+        metadataType="InstalledPackage"
+        retrieveTarget="${homedir}/opt"/>
+    </target>
+
+</project>

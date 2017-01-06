@@ -1,0 +1,50 @@
+<project name="sfDelta">
+
+    <!-- DELTA TARGETS: Define the Delta Deployment task for diff deployments -->
+
+    <taskdef name="deltaDeployment"
+        classpath="${tooldir}/lib/SalesforceAntTasks-with-dependencies.jar"
+        classname="sfanttasks.sfdeltadeployment.SFDeltaDeploymentTask" />        
+
+    <target name="tagDeployment">
+      <property name="previousDeployment" value="previousDeployment"/>
+      <property name="remote" value="origin"/>
+      <echo level="info">Tagging deployment using ...
+        previousDeployment=${previousDeployment}
+        remote=${remote}
+      </echo>
+      <exec executable="bash" dir="${homedir}" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/tag_deployment"/>
+        <env key="previousDeployment" value="${previousDeployment}"/>
+        <env key="remote" value="${remote}"/>
+      </exec>
+    </target>
+
+    <target name="DeployDiff" depends="initHome" 
+      description="Deploys the minimum amount of metadata to an org by comparing two tags and transferring the difference. Requires: home, sf_credentials, sourceTag, destBranch.).">
+      <property name="gitBaseDir" value="${homedir}" />
+      <property name="deltaFolder" value="${homedir}/deltaFolder"/>
+      <mkdir dir="${deltaFolder}/src"/>
+      <echo>Deploying diff using ...
+        gitBaseDir="${gitBaseDir}"
+        deltaFolder="${deltaFolder}" 
+        previousDeployment="${previousDeployment}"</echo>
+      <deltaDeployment gitBaseDir="${gitBaseDir}" deltaFolder="${deltaFolder}" 
+        previousDeployment="${previousDeployment}"/>
+        <property name="sf_deployRoot" value="${deltaFolder}/src"/>      
+        <antcall target="deployPackage"/>
+        <antcall target="tagDeployment"/>
+    </target>
+    
+    <target name="DeployDiffToDevelop" description="Calls DeployDiff for develop. Requires: home, sf_credentials (for develop). Expects a develop branch with a develop-org tag, with develop checked out, and a develop sandbox.">
+      <property name="sandbox" value="develop"/>
+      <property name="previousDeployment" value="develop-org"/>
+      <antcall target="DeployDiff"/>
+    </target>
+
+    <target name="DeployDiffToProduction" depends="initHome" description="Calls DeployDiff for master. Requires: home, sf_credentials (for production). Expects a master branch with a master-org tag, with master checked out.">
+      <property name="previousDeployment" value="master-org"/>
+      <antcall target="DeployDiff"/>
+    </target>
+
+</project>
