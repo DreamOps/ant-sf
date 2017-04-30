@@ -1,0 +1,6 @@
+# Select union strategy to avoid metadata merge conflicts
+*.profile merge=union
+*.object merge=union
+*.layout merge=union
+src/package.xml merge=union
+

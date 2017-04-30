@@ -3,7 +3,7 @@
 enabled, and returns the pruned version to standard output.
 
 To call from the Python CLI (with metadata present):
-    ./profile_delta.py ~/8/"Custom Standard.profile" > pruned.profile
+    ./profile_prune.py ~/8/"Custom Standard.profile" > pruned.profile
 
 To call from the Ant CLI: ant -Dhome={} -Dsf_credentials={}
     -Dprofile_path_source=~/8/"Custom Standard.profile"
@@ -42,12 +42,12 @@ default components removed.
 from os import environ
 from sys import argv, exit
 
-from tools_lxml import print_tree
+from tools_lxml import save_tree
 
 from profile_delta import prune_tree
 
 
-def main(profile_path_source):
+def main(profile_path_source, profile_path_target):
     """Reads profile from file system and renders pruned profile.
     """
     try:
@@ -57,20 +57,21 @@ def main(profile_path_source):
         print "{profile_path_source} is not available.".format(
             profile_path_source=profile_path_source)
         return 1
-    print_tree(source_root)
+    save_tree(source_root, profile_path_target) 
     return 0
 
 
 if __name__ == '__main__':
-    if len(argv) == 2:
-        main(argv[1])
+    if len(argv) == 3:
+        main(argv[1], argv[2])
     else:
         profile_path_source = None
+        profile_path_target = None
         try:
             profile_path_source = environ['profile_path_source']
+            profile_path_target = environ['profile_path_target']
         except KeyError:
-            print "Requires profile_path_source as a \
-            parameter or system property. The pruned profile document \
-            is returned on standard output."
+            print "Requires profile_path_source and profile_path_target as \
+            parameters or system properties."
             exit(1)
-        main(profile_path_source)
+        main(profile_path_source, profile_path_target)

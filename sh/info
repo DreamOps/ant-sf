@@ -19,6 +19,7 @@ echo sf_packageNames=${sf_packageNames}
 echo sf_password=${sf_password}
 echo sf_password_org=${sf_password_org}
 echo sf_pollWaitMillis=${sf_pollWaitMillis}
+echo sf_postInstallClass=${sf_postInstallClass}
 echo sf_prefix=${sf_prefix}
 echo sf_prefix_list=${sf_prefix_list}
 echo sf_purgeOnDelete=${sf_purgeOnDelete}

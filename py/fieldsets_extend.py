@@ -1,4 +1,13 @@
 #!/usr/bin/python
+import argparse
+from os import environ, path
+from sys import exit
+
+from lxml import etree
+
+from tools_lxml import print_tree, save_tree, sforce_root, sub_element_text, field_sets_element, namespace_declare, namespace_prepend
+
+
 """Updates the Account object fieldSet elements to include expected Account
 fields in either the displayedFields list or the availableFields list.
 
@@ -46,14 +55,6 @@ fields list, appends the field to an add available list.
 availableFields element to the current field set.
 6. Main updates the object document with any changes.
 """
-import argparse
-from os import environ, path
-from sys import exit
-
-from lxml import etree
-
-from tools_lxml import print_tree, save_tree, sforce_root, sub_element_text, field_sets_element, namespace_declare, namespace_prepend
-
 
 FIELD_LIST = ["AccountNumber", "AccountSource", "AnnualRevenue", "BillingCity",
               "BillingCountry", "BillingLatitude", "BillingLongitude",

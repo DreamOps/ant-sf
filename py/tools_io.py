@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """Centralize IO utilities used by multiple modules.
 """
+
 from fnmatch import fnmatch
 from os import path, walk
-
 
 def find_files(directory, pattern):
     """Yields filenames matching a pattern in a directory (generic). 

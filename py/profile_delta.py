@@ -1,15 +1,17 @@
 #!/usr/bin/python
 """Compare a source and target profile and output a well-formed
-target_upgrade.profile granting access to components available in target that
-are not granted by source.
+target_upgrade.profile granting access to components available in
+target that are not granted by source.
 
 To call from the Python CLI (with metadata present): 
     ./profile_delta.py ~/8/"Custom Standard.profile"
                        ~/9/"Custom Standard.profile"
+                       ~/"Custom Standard.profile"
 
 To call from the Ant CLI: ant -Dhome={} -Dsf_credentials={} 
     -Dprofile_path_source=~/8/"Custom Standard.profile"
     -Dprofile_path_target=~/9/"Custom Standard.profile"
+    -Dprofile_path_output=~/"Custom Standard.profile"
 
 To run the embedded tests: python -m doctest -v profile_delta.py
 """
@@ -49,8 +51,8 @@ set of the element names, using a strategy specific to the access type.
 elements not present in the source set.
 6. Working from the output set, subfunction finds element in target etree and
 copies it to the output etree (creating the tree if it doesn't exist).
-7. When all access elements are processed, process returns well-formed profile
-XML document to standard output.
+7. When all access elements are processed, process savers a well-formed profile
+to a given path on the file system.
 
 Alternate Scenario:
 
@@ -121,7 +123,7 @@ from sys import argv, exit
 
 from lxml import etree
 
-from tools_lxml import print_tree, sforce_root, SF_URI, namespace_declare, namespace_prepend
+from tools_lxml import save_tree, sforce_root, SF_URI, namespace_declare, namespace_prepend
 
 
 # ---- NOTE TO READER ----
@@ -341,11 +343,11 @@ def prune_tree(profile_path):
     return profile_root
 
 
-def main_check_values(profile_path_source, profile_path_target):
-    if profile_path_source is None or profile_path_target is None:
+def main_check_values(profile_path_source, profile_path_target, profile_path_output):
+    if profile_path_source is None or profile_path_target is None or profile_path_output is None:
         raise ValueError(
-            "Both parameters are required: profile_path_source, "
-            "profile_path_target")
+            "Three parameters are required: profile_path_source, "
+            "profile_path_target, and profile_path_output")
 
 
 def main_prune_source(profile_path_source):
@@ -370,14 +372,14 @@ def main_prune_target(profile_path_target):
     return target_root
 
 
-def extract_elements(source_root, target_root, test_mode=False):
+def extract_elements(source_root, target_root, root_name='Profile', test_mode=False):
     """Creates profile document from target containing the named elements.
     names = diff_elements(prune_elements(example_profile_source(),False),
                           target,False),False)
 
     >>> source_root = prune_elements(example_profile_metadata_source(), True)
     >>> target_root = prune_elements(example_profile_metadata_target(), True)
-    >>> root = extract_elements(source_root,target_root, True)
+    >>> root = extract_elements(source_root,target_root,'Profile', True)
     >>> print_tree(root)
     <?xml version='1.0' encoding='UTF-8'?>
     <Profile xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -390,7 +392,7 @@ def extract_elements(source_root, target_root, test_mode=False):
     """
     my_extract_elements = ExtractElements()
     my_extract_elements.my_test_mode = test_mode
-    root = sforce_root('Profile')
+    root = sforce_root(root_name)
     for parent_name in PARENTS:
         children = PARENTS.get(parent_name)
         names = diff_elements(source_root, target_root, parent_name, test_mode)
@@ -399,31 +401,46 @@ def extract_elements(source_root, target_root, test_mode=False):
     return root
 
 
-def main(profile_path_source, profile_path_target):
-    """Reads profiles from file system and renders delta profile to standard
-    out.
+def is_profile(profile_path_output):
+    return '.profile' in profile_path_output
+
+
+def root_name(profile_path_output):
+    return 'Profile' if is_profile(profile_path_output) else 'PermissionSet'
+
+
+def main(profile_path_source, profile_path_target, profile_path_output):
+    """Reads profiles from file system and renders delta profile to profile_path_output.
     """
-    main_check_values(profile_path_source, profile_path_target)
+    main_check_values(profile_path_source, profile_path_target, profile_path_output)
     source_root = main_prune_source(profile_path_source)
     target_root = main_prune_target(profile_path_target)
-    root = extract_elements(source_root, target_root)
-    print_tree(root)
+    output_name = root_name(profile_path_output)
+    root = extract_elements(source_root, target_root, output_name)
+    # (TBD) - Fake it until you can make it KZN-673
+    if not is_profile(profile_path_output):
+        my_element = etree.SubElement(root,'label')
+        my_element.text = 'Community Hub Guest'
+        root.append(my_element)
+    save_tree(root, profile_path_output)
     return 0
 
 
 if __name__ == '__main__':
-    if len(argv) == 3:
-        main(argv[1], argv[2])
+    if len(argv) == 4:
+        main(argv[1], argv[2], argv[3])
     else:
         profile_path_source = None
         profile_path_target = None
+        profile_path_output = None
         try:
             profile_path_source = environ['profile_path_source']
             profile_path_target = environ['profile_path_target']
+            profile_path_output = environ['profile_path_output']
         except KeyError:
-            print "Requires profile_path_source and profile_path_target as \
-            parameters or system properties, where source is the profile \
-            with the lower major version number. The upgrade profile document \
-            is returned on standard output."
+            print "Requires profile_path_source, profile_path_target, and \
+            profile_path_output as parameters or system properties, where  \
+            source is the profile with the lower major version number. \
+            The upgrade profile document is saved to profile_path_output."
             exit(1)
-        main(profile_path_source, profile_path_target)
+        main(profile_path_source, profile_path_target, profile_path_output)
