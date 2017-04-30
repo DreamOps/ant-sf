@@ -2,6 +2,8 @@
 
     <!-- DIRECT TARGETS: Execute top-level operations for use with a direct customer. -->
 
+    <!-- Dev -->
+
     <target name="InitProduction"
             description="Prepares a new, empty repository for a production org by retrieving and pruning metadata from 
             the org. Include repo_user property for the commit log." depends="setupConfig,retrieveUnpackaged,fixComponents,commit">
@@ -9,18 +11,24 @@
     </target>
 
     <target name="InitProductionExtension"
-            description="Follows the InitProduction pipeline, and conforms metadata to reflect the latest versions of base packages. Requires home, sf_credentials. Optional: sf_prefix_list (to conform Apex metadata to the latest version of the specified packages)."
+            description="Follows the InitProduction build, and conforms metadata to reflect the latest versions of base packages. Requires home, sf_credentials. Optional: sf_prefix_list (to conform Apex metadata to the latest version of the specified packages)."
             depends="checkOnlyUnpackagedServer,setupConfig,retrieveUnpackaged,fixComponents,versionForward,commit">
       <echo level="info">Production is setup.</echo>
     </target>
 
-    <target name="StartNewTask" depends="taskRequired,deployPackage"
-      description="Starts a new task with metadata deployed into a package. Requires: home, sf_credentials. Optional: Set sf_fullName to the unmanaged or managed name (not the prefix). Develop is used as the default.">
+    <target name="StartNewTask" depends="taskRequired,branch,deployPackage"
+      description="Starts a new task with metadata deployed into a package. Requires: home, sf_credentials. Optional: Set sf_fullName to the unmanaged or managed name (not the prefix). Develop is used as the default. When used locally, 
+      this target can be a destructive operation, as any local checkout of the repository is replaced with a fresh clone.">
+      <echo level="info">Task org is ready to go.</echo>
+    </target>
+
+    <target name="StartNewTaskFlows" depends="taskRequired,fixFlowVersions,deployPackage"
+      description="Starts a new task with metadata deployed into a package with flow support. Requires: home, sf_credentials. Optional: Set sf_fullName to the unmanaged or managed name (not the prefix). Develop is used as the default.">
       <echo level="info">Task org is ready to go.</echo>
     </target>
 
     <target name="ReadyToReview" 
-      description="Create a pull request from changes made to a task org, if the tests pass. Requires: home, sf_credentials. Includes support for Flow Definitions and changes to the Admin profile. When used with a build server, do not select a client repository. (We clone our own.) "
+      description="Create a pull request from changes made to a task org, if the tests pass. Requires: home, sf_credentials. Includes support for Flow Definitions and changes to the Admin profile. When used with a build server, do not select a client repository. (We clone our own.) When used locally, this target can be a destructive operawtion, as any local checkout of the repository is replaced with a fresh clone."
       depends="taskRequired,checkOnlyServer,branch,retrievePackage,commit,postPullRequest">
        <echo level="info">Task pull request is ready to review.</echo>
     </target>
@@ -30,6 +38,8 @@
       depends="taskRequired,checkOnlyServer,branch,retrievePackage,fixManifest,injectProfiles,injectFlowDefinitions,retrieveUnpackaged,fixProfiles,commit,postPullRequest">
        <echo level="info">Task pull request is ready to review.</echo>
     </target>
+
+    <!-- Ops -->
 
     <target name="RetrieveFromOrg"
             description="Updates the repository with metadata pulled from a specified org. Requires: home, sf_credentials. The target branch must be checked out. The branch (-Dbranch=staging) may be specified to override master. Convenience targets are also provided with common parameters already set, such as RetrieveFromStaging."
@@ -67,6 +77,12 @@
       <antcall target="RetrieveFromOrg"/>
     </target>
 
+    <target name="CheckOnlyDevelopToProduction" 
+      description="Validates develop against production without updating master. Requires home, sf_credentials (production).">
+      <property name="branch" value="develop"/>
+      <antcall target="checkOnly"/>
+    </target>
+
     <target name="DeployToDevelop" 
       description="Calls deploy for develop. Requires: home, sf_credentials (for develop). Expects a develop sandbox.">
       <property name="sandbox" value="develop"/>
@@ -85,10 +101,48 @@
       <antcall target="deploy"/>
     </target>
 
-    <target name="CheckOnlyDevelopToProduction" 
-      description="Validates develop against production without updating master. Requires home, sf_credentials (production).">
-      <property name="branch" value="develop"/>
-      <antcall target="checkOnly"/>
+    <!-- Flows for the Win! -->
+
+    <target name="createFlowFolders" depends="initHome">
+      <mkdir dir="${homedir}/server"/>
+      <mkdir dir="${homedir}/server/flowDefinitions"/>
+      <mkdir dir="${homedir}/server/flows"/>
+      <echo file="${homedir}/server/package.xml" append="false"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+          <types>
+              <members>*</members>
+              <name>Flow</name>
+          </types>
+          <types>
+              <members>*</members>
+              <name>FlowDefinition</name>
+          </types>
+          <version>${sf_apiVersion}</version>
+      </Package>]]></echo>
     </target>
-    
-</project>
+
+    <target name="retrieveFlows">
+      <property name="sf_retrieveTarget" value="${homedir}/server"/>
+      <property name="sf_unpackaged" value="${homedir}/server/package.xml"/>
+      <property name="sf_sourcedir" value="${homedir}/server"/>
+      <antcall target="retrieveUnpackaged"/>
+    </target>
+
+    <target name="removePriorFlows" depends="initHome">
+      <property name="serverdir" value="${homedir}/server"/>
+      <echo level="info">Executing removeFlowDefinitions using ...
+        "${tooldir}/sh/remove_flows"        
+        serverdir="${serverdir}"
+        sf_sourcedir="${sf_sourcedir}"
+      </echo>
+      <!-- Do not fail on error, since there may be no prior flows to remove. -->
+      <exec executable="bash" failonerror="false">
+        <arg value="${tooldir}/sh/remove_prior_flows"/>
+        <env key="serverdir" value="${serverdir}"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+      </exec>
+    </target>
+
+    <target name="fixFlowVersions" depends="createFlowFolders,retrieveFlows,removePriorFlows"/>
+
+  </project>

@@ -10,6 +10,16 @@
 
     -->
 
+    <target name="initCheckOnly" 
+      description="Sets properties for a CheckOnly deploy. Must be called before initHome (or any target the depends on initHome).">
+      <property name="sf_checkOnly" value="true"/>
+      <property name="sf_testLevel" value="RunLocalTests"/>
+    </target>
+
+    <target name="initNoTestRun" description="Sets testLevel. Must be called before initHome (or any target the depends on initHome).">
+      <property name="sf_testLevel" value="NoTestRun"/>      
+    </target>
+
     <target name="initRepo" depends="initRepoCore,initRepoHost"/>
 
     <target name="initRepoCore">
@@ -67,12 +77,14 @@
       <property name="destination" value="develop"/>
       <property name="close_source_branch" value="false"/>
 
+      <!-- Set your own repo details in the properties file. -->
       <property file="${tooldir}/build_repo.properties"/>
       <property name="repo_config_user" value="${repo_user}"/>
       <property name="repo_config_email_domain" value="example.com"/>
       <property name="repo_config_email" value="${repo_config_user}@${repo_config_email_domain}"/>
       <property name="repo_description" value=""/>
       <property name="repo_message" value="Committed by build agent"/>
+      <!-- Set home and repo_host to generate the other "repo_" properties. -->
       <property name="repo_name" value="${home}"/>
       <property name="repo_full_name" value="${repo_owner}/${repo_name}"/>
       <property name="repo_host" value="bitbucket.org"/>
@@ -102,7 +114,7 @@
     </target>
 
     <target name="initGitHub" depends="isRepoHostGitHub" if="is_repo_host_github" >
-      <echo>Setting pull request payload script to Bitbucket version ...</echo>
+      <echo>Setting pull request payload script to GitHub version ...</echo>
       <property name="post_pull_request_script" value="post_pull_request_github"/>
       <echo>post_pull_request_script is ${post_pull_request_script}</echo>
     </target>
@@ -129,7 +141,7 @@
       <property file="${tooldir}/build_sf.properties"/>
             
       <!-- 
-        If sf_credentials are set, parse into sf_username_org, and sf_password. 
+        If sf_credentials is set, parse into sf_username_org, and sf_password. 
         Expected credential format: "username@example.com:passwordsecurityToken"
       -->
       <script language="javascript">
@@ -162,12 +174,10 @@
 
       <property name="sf_username" value="${sf_username_org}"/>
 
-      <condition property="sf_password"
-                 value="${sf_password_org}${sf_securityToken}">
-        <isset property="sf_securityToken"/>
-      </condition>
-
       <property name="sf_password" value="${sf_password_org}"/>
+
+      <!-- Set token to empty if not already set, so we can append it for authentication. -->
+      <property name="sf_securityToken" value=""/>
 
       <!-- Default to single-package deployment. -->
       <property name="sf_packageNames" value="${sf_fullName}"/>
@@ -177,8 +187,20 @@
 
       <!-- Minimal package.xml manifests that deploy Salesforce components from
       a local folder. -->
+      <condition property="sf_postInstallClass" value="">
+        <not>
+          <isset property="sf_postInstallClass"/>
+        </not>
+      </condition>
+      <condition property="sf_setupWeblink" value="">
+        <not>
+          <isset property="sf_setupWeblink"/>
+        </not>
+      </condition>
       <property name="sf_package_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${sf_xmlns}">
   <fullName>${sf_fullName}</fullName>
+  <postInstallClass>${sf_postInstallClass}</postInstallClass>
+  <setupWeblink>${sf_setupWeblink}</setupWeblink>  
   <version>${sf_apiVersion}</version>
 </Package>]]></property>
 
@@ -186,5 +208,12 @@
   <version>${sf_apiVersion}</version>
 </Package>]]></property>
 
+      <property name="sf_InstalledPackage_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${sf_xmlns}">
+  <types>
+    <members>*</members>
+    <name>InstalledPackage</name>
+  </types>
+  <version>${sf_apiVersion}</version>
+</Package>]]></property>
     </target>
 </project>

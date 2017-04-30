@@ -37,9 +37,10 @@ if [[ -z $filelist ]]; then
     echo "Warning: Nothing to commit."
     exit 0
 fi
-git add ${commitdir}
+# suppress file mode for multiple OS support
+git -c core.fileMode=false add ${commitdir}
 
-git commit -a -m "${task} ${repo_message}"
+git commit -m "${task} ${repo_message}"
 
 echo git branch
 git branch

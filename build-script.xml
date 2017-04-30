@@ -27,7 +27,7 @@
         <env key="sf_package_xml" value="${sf_package_xml}"/>
         <env key="sf_packageNames" value="${sf_packageNames}"/>
         <env key="sf_password" value="${sf_password}"/>
-        <env key="sf_password_org" value="${sf_password_org}"/>
+        <env key="sf_password_org" value="${sf_password_org}"/>        
         <env key="sf_pollWaitMillis" value="${sf_pollWaitMillis}"/>
         <env key="sf_prefix" value="${sf_prefix}"/>
         <env key="sf_prefix_list" value="${sf_prefix_list}"/>
@@ -97,6 +97,26 @@
     </target>
 
     <!--
+      Clones the repo under the basedir and creates the task branch.
+    -->
+    <target name="branch" depends="initRepo">
+      <echo level="info">Executing branch using ...
+        "${tooldir}/sh/branch"
+        repo_url="${repo_url}"
+        repo_name="${repo_name}"
+        branch="${branch}"
+        parentdir="${parentdir}"</echo>
+      <delete dir="${repo_name}"/>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/branch"/>
+        <env key="repo_url" value="${repo_url}"/>
+        <env key="repo_name" value="${repo_name}"/>
+        <env key="branch" value="${branch}"/>
+        <env key="parentdir" value="${parentdir}"/>
+      </exec>
+    </target>
+
+    <!--
       Executes commit script to checkin metadata.
     -->
     <target name="commit" depends="initRepo">
@@ -150,8 +170,8 @@
     -->
     <target name="fixManifest">
       <echo level="info">Executing fixManifest using ...
-        "${tooldir}/sh/fix-manifest"
-        "homedir"="${homedir}"
+        "${tooldir}/sh/del_unpackaged_label"
+        "sf_sourcedir"="${sf_sourcedir}"
       </echo>
       <exec executable="bash" failonerror="${sf_failOnError}">
         <arg value="${tooldir}/sh/del_unpackaged_label"/>
@@ -170,19 +190,6 @@
       <exec executable="bash" failonerror="${sf_failOnError}">
         <arg value="${tooldir}/sh/del_profile_permset_members"/>
         <env key="homedir" value="${homedir}"/>
-      </exec>
-    </target>
-
-    <!-- 
-      Adds Admin profile to the manifest.
-    -->
-    <target name="injectProfiles" depends="initHome">
-      <echo level="info">Executing injectProfiles script using ...
-        "${tooldir}/sh/inject-profiles"
-        sf_sourcedir="${sf_sourcedir}"</echo>
-      <exec executable="bash" failonerror="${sf_failOnError}">
-        <arg value="${tooldir}/sh/add_admin_member"/>
-        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
       </exec>
     </target>
 
@@ -205,16 +212,29 @@
     <target name="injectFullName">
       <echo level="info">Executing injectFullName script using ...
         "${tooldir}/inject-fullName"
-        "sf_sourcedir"="${sf_sourcedir}"
+        sf_sourcedir="${sf_sourcedir}"
         sf_fullName="${sf_fullName}"
       </echo>
-      <exec executable="bash">
+      <exec executable="bash" failonerror="${sf_failOnError}">
         <arg value="${tooldir}/add_fullName_field"/>
         <env key="sf_sourcedir" value="${sf_sourcedir}"/>
         <env key="sf_fullName" value="${sf_fullName}"/>
       </exec>
     </target>
     
+    <!-- 
+      Adds Admin profile to the manifest.
+    -->
+    <target name="injectProfiles" depends="initHome">
+      <echo level="info">Executing injectProfiles script using ...
+        "${tooldir}/sh/inject-profiles"
+        sf_sourcedir="${sf_sourcedir}"</echo>
+      <exec executable="bash" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/sh/add_admin_member"/>
+        <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+      </exec>
+    </target>
+
     <!--
       Updates the Account object fieldSet elements to include expected Account fields in either the displayedFields list or the availableFields list.
     -->
@@ -223,29 +243,22 @@
           homedir=${homedir}
         </echo>
         <exec executable="python" failonerror="${sf_failOnError}">
-          <arg value="${tooldir}/py/fieldsetsExtend.py"/>
+          <arg value="${tooldir}/py/fieldsets_extend.py"/>
           <env key="homedir" value="${homedir}"/>
         </exec>
     </target>
 
-    <!--
-      Clones the repo under the basedir and creates the task branch.
+    <!-- 
+      Removes ListView elements from Account object.
     -->
-    <target name="branch" depends="initRepo">
-      <echo level="info">Executing branch using ...
-        "${tooldir}/sh/branch"
-        repo_url="${repo_url}"
-        repo_name="${repo_name}"
-        branch="${branch}"
-        parentdir="${parentdir}"</echo>
-      <delete dir="${repo_name}"/>
-      <exec executable="bash" failonerror="${sf_failOnError}">
-        <arg value="${tooldir}/sh/branch"/>
-        <env key="repo_url" value="${repo_url}"/>
-        <env key="repo_name" value="${repo_name}"/>
-        <env key="branch" value="${branch}"/>
-        <env key="parentdir" value="${parentdir}"/>
-      </exec>
+    <target name ="listViewRemove">
+        <echo level="info">Removing ListViews using ...
+          homedir=${homedir}
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/listviews_remove.py"/>
+          <env key="homedir" value="${homedir}"/>
+        </exec>
     </target>
 
     <!--
@@ -256,7 +269,8 @@
         "${tooldir}/sh/${post_pull_request_script}"
         repo_full_name="${repo_full_name}"
         repo_password="${repo_password}"
-        repo_user="${repo_user}"</echo>
+        repo_user="${repo_user}"
+      </echo>
       <exec executable="bash" failonerror="${sf_failOnError}">
         <arg value="${tooldir}/sh/${post_pull_request_script}"/>
         <env key="repo_full_name" value="${repo_full_name}"/>
@@ -266,6 +280,56 @@
         <env key="repo_post_pull_request_payload_github"
              value="${repo_post_pull_request_payload_github}"/>
         <env key="repo_user" value="${repo_user}"/>
+      </exec>
+    </target>
+
+    <!--
+      Exchange prefix references in metadata files so that code can be deployed under a different namespace prefix. 
+    -->
+    <target name="prefixSwap" depends="initHome">
+        <echo>Swapping prefixes using ...
+            sf_sourcedir="${sf_sourcedir}"
+            sf_prefix_swap="${sf_prefix_swap}"
+        </echo>
+        <exec executable="python" failonerror="${sf_failOnError}">
+          <arg value="${tooldir}/py/prefix_swap.py"/>
+          <env key="sf_sourcedir" value="${sf_sourcedir}"/>
+          <env key="sf_prefix_swap" value="${sf_prefix_swap}"/>
+        </exec>
+    </target>
+
+    <!--
+      Compares a source and target profile and outputs a well-formed
+      target_upgrade.profile granting access to components available
+      in target that are not granted by source.
+    -->
+    <target name="profileDelta" depends="initHome">
+      <echo>Comparing source and target profiles using ...
+        profile_path_source="${profile_path_source}"
+        profile_path_target="${profile_path_target}"
+        profile_path_output="${profile_path_output}"
+      </echo>
+      <exec executable="python" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/py/profile_delta.py"/>
+        <env key="profile_path_source" value="${profile_path_source}"/>
+        <env key="profile_path_target" value="${profile_path_target}"/>
+        <env key="profile_path_output" value="${profile_path_output}"/>
+      </exec>
+    </target>
+
+    <!--
+      Removes false permissions from a profile and outputs 
+      a well-formed profile that only grants permissions.
+    -->
+    <target name="profilePrune" depends="initHome">
+      <echo>Comparing source and target profiles using ...
+        profile_path_source="${profile_path_source}"
+        profile_path_target="${profile_path_target}"
+      </echo>
+      <exec executable="python" failonerror="${sf_failOnError}">
+        <arg value="${tooldir}/py/profile_prune.py"/>
+        <env key="profile_path_source" value="${profile_path_source}"/>
+        <env key="profile_path_target" value="${profile_path_target}"/>
       </exec>
     </target>
 
@@ -281,75 +345,7 @@
         <filelist dir="${tooldir}" files="@gitignore"/>
       </concat>
       <mkdir dir="${sf_sourcedir}"/>
-      <copy file="${tooldir}/package.xml" tofile="${sf_sourcedir}/package.xml"/>
-    </target>
-
-    <!--
-      Inserts a prefix to specific items in specific files. Accepts input as an
-      array of JSON objects that specifies the prefix, search string, and path.
-    -->
-    <target name = "prefixInject" depends="initHome">
-        <echo>Injecting prefixes to specific locations using ...
-          homedir=${homedir}
-          inject_json=${sf_inject}
-        </echo>
-        <exec executable="python" failonerror="${sf_failOnError}">
-          <arg value="${tooldir}/py/prefix_inject.py"/>
-          <env key="homedir" value="${homedir}"/>
-          <env key="inject_json" value="${sf_inject_nu}"/>
-        </exec>
-    </target>
-
-    <!--
-      Injects a given package prefix to selected custom metadata types.
-    -->
-    <target name="prefixMdt" depends="initHome">
-        <echo>Packaging metadata using ... (TBD) ...
-            sf_prefix="${sf_prefix}"
-            sf_sourcedir="${sf_sourcedir}"
-        </echo>
-        <!-- (TBD) KZN-257
-        <exec executable="python" failonerror="${sf_failOnError}">
-          <arg value="${tooldir}/py/prefix_mdt.py"/>
-          <env key="sf_prefix" value="${sf_prefix}"/>
-          <env key="sf_sourcedir" value="${sf_sourcedir}"/>
-        </exec>
-        -->
-    </target>
-
-    <!--
-      Exchange prefix references in metadata files so that code can be deployed under a different namespace prefix. 
-    -->
-    <target name="prefixSwap" depends="initHome">
-        <echo>Swapping prefixes using ...
-            sf_sourcedir="${sf_sourcedir}"
-            sf_prefixSwap="${sf_prefix_swap}"
-        </echo>
-        <exec executable="python" failonerror="${sf_failOnError}">
-          <arg value="${tooldir}/py/prefix_swap.py"/>
-          <env key="sf_sourcedir" value="${sf_sourcedir}"/>
-          <env key="sf_prefixSwap" value="${sf_prefix_swap}"/>
-        </exec>
-    </target>
-
-    <!--
-      Compares a source and target profile and outputs a well-formed
-      target_upgrade.profile granting access to components available
-      in target that are not granted by source.
-    -->
-    <target name="profileDelta" depends="initHome">
-      <echo>Comparing source and target profiles using ...
-        profile_path_source="${profile_path_source}"
-        profile_path_target="${profile_path_target}"
-      </echo>
-      <exec executable="python" failonerror="${sf_failOnError}">
-        <arg value="${tooldir}/py/profile_delta.py"/>
-        <env key="profile_path_source=" value="${profile_path_source}"/>
-        <env key="profile_path_target" value="${profile_path_target}"/>
-
-        <env key="homedir" value="${homedir}"/>
-        <env key="sf_prefix_list" value="${sf_prefix_list}"/>
-      </exec>
+      <copy file="${tooldir}/package-all.xml" tofile="${sf_sourcedir}/package.xml"/>
     </target>
 
     <!--
@@ -363,7 +359,7 @@
         sf_prefix_list="${sf_prefix_list}"
       </echo>
       <exec executable="python" failonerror="${sf_failOnError}">
-        <arg value="${tooldir}/py/versionForward.py"/>
+        <arg value="${tooldir}/py/version_forward.py"/>
         <env key="homedir" value="${homedir}"/>
         <env key="sf_prefix_list" value="${sf_prefix_list}"/>
       </exec>

@@ -1,4 +1,4 @@
-<project name="sfCodeScan">
+<project name="sfCodeScan" default="AnalyzePullRequest" xmlns:sf="salesforce">
 
     <!-- CODESCAN TARGETS: Analyze static code for quality and stylistic issues. -->
 
@@ -15,7 +15,7 @@
       <property name="sonar.projectDate" value="1980-01-01" />
       <property name="sonar.projectKey" value="dummyProjectKey" />
       <property name="sonar.projectName" value="dummyProjectName" />
-      <property name="sonar.sources" value="${sourcedir}" />
+      <property name="sonar.sources" value="${sf_sourcedir}" />
       <property name="sonar.sourceEncoding" value="UTF-8" />
       <property name="sonar.host.url" value="${sonar_host_url}" />
       <property name="sonar.login" value="${sonar_login}" />
@@ -29,9 +29,9 @@
       <property name="sonar.bitbucket.accountName" value="${sonar_accountName}" />
       <property name="sonar.bitbucket.teamName" value="${sonar_teamName}" />
       <property name="sonar.bitbucket.repoSlug"
-                value="${sonar.bitbucket.repoSlug}" />
+                value="${sonar_repoSlug}" />
       <property name="sonar.bitbucket.apiKey"
-                value="${sonar.apiKey}" />
+                value="${sonar_apiKey}" />
 
       <!-- Execute Sonar -->
       <sonar:sonar xmlns:sonar="antlib:org.sonar.ant" />

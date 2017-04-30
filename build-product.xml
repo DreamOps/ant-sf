@@ -1,0 +1,8 @@
+<project name="sfProduct">
+
+    <!-- PRODUCT TARGETS: Execute top-level operations for use with a distributed package. -->
+
+	<!-- Note: These targets are being adapted from a working package and are not 
+available in the library yet. -->
+
+</project>

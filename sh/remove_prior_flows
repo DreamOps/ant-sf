@@ -1,0 +1,3 @@
+#!/bin/bash
+# if we have the server/flow-version, delete it from the incoming src
+cd ${serverdir}/flows; find *.flow -exec rm -rf ${sf_sourcedir}/flows/{} \;

@@ -1,11 +1,11 @@
-# Ant-DX Buildfile
+# Ant-SF Buildfile
 
 > Developer Note: The build is composed from several modules. To review 
 > the buildfile source, you may wish to start with the build-direct.xml or 
 > build-product.xml targets, and then refer to the dependencies.
 
 ## Audiences
-* Inhouse and external Salesforce consultants extending Salesforce
+* Inhouse and external Salesforce consultants extending a Salesforce org
 * Force.com managed package vendors 
 
 ## About Ant
@@ -30,7 +30,7 @@ ignored silently. This approach simplies overriding properties at runtime.
 
 ## Scope 
 
-The ant-dx buildfile supplements tasks provided by the Ant-Salesforce JAR. 
+The ant-sf buildfile supplements tasks provided by the Ant-Salesforce JAR. 
 The JAR provides a core set of tasks for retrieving and deploying metadata 
 between Salesforce orgs and a Git version control repository.  
 
@@ -44,13 +44,13 @@ with a corresponding task branch.
 
 ## Disclaimer
 
-While the ant-dx approach resembles the forthcoming Salesforce DX model, 
+While the ant-sf approach resembles the forthcoming Salesforce DX model, 
 the two products are not related. As Salesforce DX becomes available, 
-ant-dx will adopt and adapt to provide the best experience. 
+ant-sf will adopt and adapt to provide the best experience. 
 
 ## Design
 
-The ant-dx targets are designed to require a minimum number of parameters, 
+The ant-sf targets are designed to require a minimum number of parameters, 
 and can be called from a command line or a build server.
 
 ```
@@ -73,18 +73,34 @@ For example, ReadyToReview is a pipeline target:
 % ReadyToReview -Dhome=my-app -Dtask=ABC-1234 -Dsf_credentials=ABC-1234@my.dev:Alpha1234$TOKEN
 ```
 
+The ReadyToReview target is a set of step targets. 
+
+```
+<target 
+	name="ReadyToReview" 
+	depends="taskRequired,checkOnlyServer,branch,retrievePackage,commit,postPullRequest">
+</target>
+```
+
+By separating the concerns of pipeline and step targets, the library 
+encourages readibility and reuse.
+
 ## One and Done
 
 Ideally, builds called from a server specify one target. As a best practice, 
 if a new build needs to use multiple targets, create a new pipeline target to 
-include all the build steps in a single call. 
+include all the build steps in a single invocation. 
 
 Enforcing a "one and done" practice simplifies use of the buildfile from the 
 command line and maximizes reuse. 
 
 The build script then has the sole responsibilty of managing the build steps, 
 while the build server collects parameters, orchestrates version control, and 
-preserves the build logs.  
+preserves the build logs. 
+
+One and Done simplifies development by allowing builds to be easily developed 
+API-first from the command line. By encapsulating the buid logic, this 
+approach also discourages "configuration drift" between simliar builds. 
 
 ## Local Folders 
 
@@ -98,7 +114,7 @@ parent directory. On the build server, this layout would look like
 ```
 /work-folder
 ./sf-org
-./ant-dx
+./ant-sf
 ```
 
 In a local environment, you might have several Salesforce projects checked out,
@@ -109,7 +125,7 @@ The default target, info, prints the property values, to help with
 development and debugging.
 
 Baseline properties must be set by the calling environment (build server), at
-the command line or build_sf.properties (first one wins!).
+the command line or from the build_sf.properties (first one wins!).
 
 Since many of these builds are shared between tasks, in a build server
 environments, most builds should be forced to use clean work folders.
@@ -129,6 +145,10 @@ Some builds are run routinely on demand, others can be run automatically
 based on changes to Git. Workflow builds are run when a work increment is 
 ready for the next stage. Utility builds are run as needed. 
 
+The ant-sf library is designed around using "feature" or "task" sandboxes. Each development task is linked to a specific sandbox. Then the task is complete, and merged into the mainline, then the sandbox can be deleted, and its license reused. 
+
+(Note: At some point, scratch orgs can be used instead of task sandboxes.)
+ 
 ### Direct Builds - Routine 
 
 * 1 Start New Task in Sandbox (StartNewTask)
@@ -154,6 +174,10 @@ ready for the next stage. Utility builds are run as needed.
 * Deploy Sample Data to Sandbox (TBD)
 * Initialize Production (InitProduction)
 
+The (TBD) builds are not provided in the library yet. 
+
+(Note: At some point, scratch orgs can be used instead of trial instances.)
+
 ## Product Build Roster
 
 The product and direct build rosters are similar. The key differences are (1)
@@ -164,7 +188,12 @@ orgs.
 In lieu of sandboxes, the package builds are designed to use trial instances, 
 using the Trialforce feature available to App Innovation Partners (ISVs).
 
+(Note: At some point, scratch orgs can be used instead of trial instances.)
+
 ### Product Builds - Routine 
+
+(Note: These targets are being adapted from a working package and are not 
+available in the library yet.)
 
 * 1 Start New Task in Trial (StartNewTask)
 * 2 Ready To Review Task (ReadyToReview)
@@ -172,8 +201,8 @@ using the Trialforce feature available to App Innovation Partners (ISVs).
 ## Product Builds - Automatic
 
 * CheckOnly from Develop to Packaging Org Nightly (CheckOnlyDevelopToProduction)
-* Deploy Develop to Trialforce Source Org on Change (deployPackage)
-* Deploy Package to Packaging Org on Change (deployPackage)
+* Deploy Develop Branch to Trialforce Source Org on Change (deployPackage)
+* Deploy Package Branch to Packaging Org on Change (deployPackage)
 
 ### Product Builds - Distribution
 

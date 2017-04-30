@@ -45,12 +45,12 @@
     <target name="describe" depends="initHome">
       <echo level="info">Retrieving components from the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         resultFilePath="${homedir}/describeMetadata.xml"</echo>
       <sf:describeMetadata
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         resultFilePath="${homedir}/describeMetadata.xml"
       />
@@ -62,12 +62,12 @@
     <target name="list" depends="initHome">
       <echo level="info">Retrieving components from the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         resultFilePath="${homedir}/listMetadata.xml"</echo>
       <sf:listMetadata
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         metadataType="CustomObject"
         folder="objects"
@@ -80,11 +80,12 @@
         into the specified "sf_sourcedir" folder.
     -->
     <target name="retrieveUnpackaged" depends="initHome">
-      <property name="sf_unpackaged" value="${sf_sourcedir}/package.xml"/>
+      <property name="sf_unpackagedName" value="package.xml"/>
+      <property name="sf_unpackaged" value="${sf_deployRoot}/${sf_unpackagedName}"/>
       <mkdir dir="${sf_retrieveTarget}"/>
       <echo level="info">Retrieving components from the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         retrieveTarget="${sf_retrieveTarget}"
         apiVersion="${sf_apiVersion}"
@@ -94,11 +95,10 @@
         trace="${sf_trace}"
         unpackaged="${sf_unpackaged}"
         unzip="${sf_unzip}"
-        sf_sourcedir="${sf_sourcedir}"
       </echo>
       <sf:retrieve
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         retrieveTarget="${sf_retrieveTarget}"
         apiVersion="${sf_apiVersion}"
@@ -114,8 +114,8 @@
     <!--
         Fetches metadata according to a wildcard package manifest referencing all retrievable types.
     -->
-    <target name="retrieveAllUnpackaged">
-      <copy file="${tooldir}/package.xml" todir="${sf_deployRoot}"/>
+    <target name="retrieveAll" depends="initHome">
+      <copy file="${tooldir}/package.xml" todir="${sf_sourcedir}"/>
       <antcall target="retrieveUnpackaged"/>
     </target>
 
@@ -127,10 +127,10 @@
         Fetches packaged metadata from an org, using a stub manifest citing the API version.
     -->
     <target name="retrievePackage" depends="initHome">
-      <mkdir dir="${sf_retrieveTarget}"/>
+        <mkdir dir="${sf_retrieveTarget}"/>
       <echo level="info">Retrieving components from the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         retrieveTarget="${sf_retrieveTarget}"
         packageNames="${sf_packageNames}"
@@ -140,10 +140,11 @@
         singlePackage="${sf_singlePackage}"
         trace="${sf_trace}"
         unzip="${sf_unzip}"
-        sf_sourcedir="${sf_sourcedir}"</echo>
+        sf_sourcedir="${sf_sourcedir}"
+    </echo>
       <sf:retrieve
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         retrieveTarget="${sf_retrieveTarget}"
         packageNames="${sf_packageNames}"
@@ -152,7 +153,8 @@
         maxPoll="${sf_maxPoll}"
         singlePackage="${sf_singlePackage}"
         trace="${sf_trace}"
-        unzip="${sf_unzip}"/>
+        unzip="${sf_unzip}"
+        />
         <move file="${sf_retrieveTarget}" tofile="${sf_sourcedir}"/>
     </target>
 
@@ -197,11 +199,12 @@
         <property name="sf_allowMissingFiles" value="true"/>
         <property name="sf_autoUpdatePackage" value="true"/>
         <property name="sf_checkOnly" value="false" />
+        <property name="sf_testLevel" value="NoTestRun"/>           
         <property name="sf_deployRoot" value="${sf_sourcedir}"/>
         <echo file="${sf_deployRoot}/package.xml" append="false">${sf_package_xml}</echo>
       <echo level="info">Deploying components to the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         pollWaitMillis="${sf_pollWaitMillis}"
         checkOnly="${sf_checkOnly}"
@@ -215,10 +218,14 @@
         purgeOnDelete="${sf_purgeOnDelete}"
         rollbackOnError="${sf_rollbackOnError}"
         testLevel="${sf_testLevel}"
-        trace="${sf_trace}"</echo>
+        trace="${sf_trace}"
+        fullName="${sf_fullName}"
+        postInstallClass="${sf_postInstallClass}"
+        setupWeblink=${sf_setupWeblink}
+        apiVersion="${sf_apiVersion}"</echo>
       <sf:deploy
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         pollWaitMillis="${sf_pollWaitMillis}"
         checkOnly="${sf_checkOnly}"
@@ -246,8 +253,11 @@
         <property name="sf_allowMissingFiles" value="true"/>
         <property name="sf_autoUpdatePackage" value="true"/>
         <property name="sf_checkOnly" value="false" />
+        <property name="sf_testLevel" value="NoTestRun"/>                   
         <property name="sf_deployRoot" value="${sf_sourcedir}"/>
+        <echo file="${sf_deployRoot}/package.xml" append="false">${sf_package_xml}</echo>
       <echo level="info">Deploying components to the org using ...
+        fullName="${sf_fullName}"
         sessionId="${sf_sessionId}"
         serverurl="${sf_serverurl}"
         pollWaitMillis="${sf_pollWaitMillis}"
@@ -271,7 +281,6 @@
         maxPoll="${sf_maxPoll}"
         deployRoot="${sf_deployRoot}"
         singlePackage="${sf_singlePackage}"
-        packageNames="${sf_packageNames}"
         allowMissingFiles="${sf_allowMissingFiles}"
         autoUpdatePackage="${sf_autoUpdatePackage}"
         ignoreWarnings="${sf_ignoreWarnings}"
@@ -293,10 +302,11 @@
         <property name="sf_allowMissingFiles" value="true"/>
         <property name="sf_autoUpdatePackage" value="true"/>
         <property name="sf_checkOnly" value="false" />
+        <property name="sf_testLevel" value="NoTestRun"/>        
         <property name="sf_deployRoot" value="${sf_sourcedir}"/>
       <echo level="info">Deploying components to the org using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         pollWaitMillis="${sf_pollWaitMillis}"
         maxPoll="${sf_maxPoll}"
@@ -312,7 +322,7 @@
         testLevel="${sf_testLevel}"</echo>
       <sf:deploy
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         pollWaitMillis="${sf_pollWaitMillis}"
         maxPoll="${sf_maxPoll}"
@@ -328,6 +338,28 @@
         testLevel="${sf_testLevel}"/>
     </target>
 
+    <!-- Installs managed package. Expects install_namespace, install_version, and install_password to be set by caller. -->
+    <target name="install" depends="initHome">
+        <property name="installedPackagesDir" value="${sf_sourcedir}/installedPackages"/>
+        <echo level="info">Installing package to org using ...
+            install_namespace=${install_namespace}
+            install_version=${install_version}
+            install_password=${install_password}
+            sf_sourcedir=${sf_sourcedir}
+            installedPackagesDir=${installedPackagesDir}
+        </echo>
+        <echo file="${sf_sourcedir}/package.xml" append="false">${sf_InstalledPackage_xml}</echo>
+        <delete dir="${installedPackagesDir}"/>
+        <mkdir dir="${installedPackagesDir}"/>
+        <property name="sf_metadata_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<InstalledPackage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <versionNumber>${install_version}</versionNumber>
+    <password>${install_password}</password>
+</InstalledPackage>]]></property>
+        <echo file="${installedPackagesDir}/${install_namespace}.installedPackage" append="false">${sf_metadata_xml}</echo>
+        <antcall target="deployUnpackaged"/>
+    </target>
+
     <!-- for completeness -->
     <target name="deployUnpackagedStrict">
         <property name="sf_allowMissingFiles" value="false"/>
@@ -341,20 +373,25 @@
 
     <target name="checkOnlyPackage">
         <property name="sf_checkOnly" value="true" />
+        <property name="sf_testLevel" value="RunLocalTests"/>                
         <antcall target="deployPackage"/>
     </target>
 
     <target name="checkOnlyUpdate">
-        <antcall target="checkOnlyPackage"/>
+        <property name="sf_checkOnly" value="true" />
+        <property name="sf_testLevel" value="RunLocalTests"/>                
+        <antcall target="deployPackage"/>
     </target>
 
     <target name="checkOnlyPackageSessionId">
         <property name="sf_checkOnly" value="true" />
+        <property name="sf_testLevel" value="RunLocalTests"/>                
         <antcall target="deployPackageSessionId"/>
     </target>
 
     <target name="checkOnlyUnpackaged">
         <property name="sf_checkOnly" value="true" />
+        <property name="sf_testLevel" value="RunLocalTests"/>                        
         <antcall target="deployUnpackaged"/>
     </target>
 
@@ -369,7 +406,7 @@
         <mkdir dir="${sf_checkOnlyRoot}"/>
         <echo file="${sf_checkOnlyRoot}/package.xml">${sf_unpackaged_xml}</echo>
         <property name="sf_deployRoot" value="${sf_checkOnlyRoot}"/>
-        <property name="sf_testLevel" value="RunLocalTests"/>
+        <property name="sf_testLevel" value="RunLocalTests"/>                        
         <antcall target="deployUnpackaged"/>
     </target>
 
@@ -382,18 +419,46 @@
       usually to update the version set in Apex classes (versionForward).
     -->
    <target name="retrieveInstalledPackages" depends="initHome">
+      <property name="retrieveTarget" value="${homedir}/opt"/>
       <echo level="info">Retrieving installed package versions using ...
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
-        retrieveTarget="${homedir}/opt</echo>
+        retrieveTarget="${retrieveTarget}</echo>
       <mkdir dir="${homedir}/opt"/>
       <sf:bulkRetrieve
         username="${sf_username}"
-        password="${sf_password}"
+        password="${sf_password}${sf_securityToken}"
         serverurl="${sf_serverurl}"
         metadataType="InstalledPackage"
-        retrieveTarget="${homedir}/opt"/>
+        retrieveTarget="${retrieveTarget}"/>
+    </target>
+
+    <!-- Deploys a single permission set (say, for a pilot) -->
+    <target name="deployPermset" depends="initHome">
+        <property name="sf_deployRoot" value="${homedir}/DeployPermset"/>
+        <property name="sourcedir" value="${sf_sourcedir}/permissionsets"/>
+        <property name="deploydir" value="${sf_deployRoot}/permissionsets"/>
+        <echo level="info">Deploying permission set using ...
+        sf_username="${sf_username}"
+        sf_password="${sf_password}${sf_securityToken}"
+        sf_serverurl="${sf_serverurl}"
+        sf_permset="${sf_permset}"
+        sf_sourcedir="${sf_sourcedir}"
+        sf_deployRoot="${sf_deployRoot}"
+        </echo>
+        <mkdir dir="${deploydir}"/>
+        <copy file="${sourcedir}/${sf_permset}.permissionset" tofile="${deploydir}/${sf_permset}.permissionset.xml"/>
+        <property name="permset_xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="sf_xmlns">
+    <types>
+        <members>${sf_permset}</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>29.0</version>
+</Package>]]></property>
+        <echo file="${sf_deployRoot}/package.xml" append="false">${permset_xml}</echo>
+        <antcall target="deployUnpackaged"/>
     </target>
 
 </project>

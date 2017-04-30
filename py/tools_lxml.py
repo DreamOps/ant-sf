@@ -30,6 +30,10 @@ def namespace_prepend(match_string, test_mode=False):
     """
     return match_string if test_mode else SF_PREFIX + ':' + match_string
 
+def load_tree(filename):
+    """Loads an XML document as an etree."""
+    parser = etree.XMLParser(remove_blank_text=True)
+    return etree.parse(filename, parser)
 
 def save_tree(root, filename):
     """Saves etree as XML document and raises IOError for any problem."""
@@ -101,6 +105,15 @@ def fields_element(root, full_name, default_value, description,
     sub_element_text(fields, 'track_feed_history', track_feed_history)
     sub_element_text(fields, 'track_history', track_history)
     sub_element_text(fields, 'type', type )
+    return root
+
+
+def list_views_element(root, full_name, columns, filter_scope, label):
+    list_views = etree.SubElement(root, 'listViews')
+    sub_element_text(list_views, 'fullName', full_name)
+    sub_element_text(list_views, 'columns', columns)
+    sub_element_text(list_views, 'filterScope', filter_scope)
+    sub_element_text(list_views, 'label', label)
     return root
 
 

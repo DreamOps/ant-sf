@@ -242,7 +242,8 @@ def main(homedir, prefix_list):
     for px in prefixes:
         prefixdir = path.join(homedir, 'opt/installedPackages', px+'.installedPackage')
         sourcedirs = [path.join(homedir, 'src/classes'),path.join(homedir, 'src/components'),
-                      path.join(homedir, 'src/pages'), path.join(homedir, 'src/triggers')]
+                      path.join(homedir, 'src/pages'), path.join(homedir, 'src/triggers'),
+                      path.join(homedir, 'src/email')]
         log = update_package_version(px, prefixdir, sourcedirs, '*.*-meta.xml')
         print(log)
 

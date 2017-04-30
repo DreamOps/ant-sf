@@ -1,5 +1,4 @@
 # Add components to ignore
-
 *SocialPost*
 ExternalEventMapping.workflow
 Idea.workflow
@@ -33,10 +32,9 @@ src/workflows/Reply.workflow
 src/workflows/Question.workflow
 src/workflows/SocialPersona.workflow
 src/workflows/SocialPost.workflow
-
 *.iml
 .idea/
-ant-dx/
+ant-sf/
 deltaFolder/
 IlluminatedCloud/
 opt/
